@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Drawing Canvas 😁</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Stop the page from scrolling */
+            background-color: #f0f0f0;
+        }
+        canvas {
+            display: block;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="drawingBoard"></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const canvas = document.getElementById('drawingBoard');
+        const ctx = canvas.getContext('2d');
+
+        // Make the canvas fill the entire phone screen
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let isDrawing = false;
+        let currentX = 0;
+        let currentY = 0;
+
+        // Helper function to get the exact X and Y coordinates of your finger
+        function getTouchPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.touches[0].clientX - rect.left,
+                y: e.touches[0].clientY - rect.top
+            };
+        }
+
+        // 1. When you touch the screen
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Stop the screen from pulling/scrolling
+            isDrawing = true;
+            const pos = getTouchPos(e);
+            currentX = pos.x;
+            currentY = pos.y;
+        }, { passive: false });
+
+        // 2. When you drag your finger
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+
+            const pos = getTouchPos(e);
+            drawLine(currentX, currentY, pos.x, pos.y, 'black', true);
+            
+            // Update the current coordinates for the next move event
+            currentX = pos.x;
+            currentY = pos.y;
+        }, { passive: false });
+
+        // 3. When you lift your finger
+        canvas.addEventListener('touchend', () => {
+            isDrawing = false;
+        });
+
+        // The core drawing function
+        function drawLine(x0, y0, x1, y1, color, emit) {
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x1, y1);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round'; // Makes the drawing lines smooth
+            ctx.stroke();
+            ctx.closePath();
+
+            // If we are the ones drawing, send the coordinates to the server
+            if (!emit) return;
+            socket.emit('drawing', { x0, y0, x1, y1, color });
+        }
+
+        // Listen for drawing data from the server
+        socket.on('drawing', (data) => {
+            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, false);
+        });
+    </script>
+</body>
+</html>
