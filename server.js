@@ -12,9 +12,14 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('A new artist connected:', socket.id);
 
-    // Broadcast drawing data
+    // Broadcast drawing lines
     socket.on('drawing', (data) => {
         socket.broadcast.emit('drawing', data);
+    });
+
+    // NEW: Broadcast emoji stamps
+    socket.on('stamp', (data) => {
+        socket.broadcast.emit('stamp', data);
     });
 
     // Broadcast the clear command
@@ -22,7 +27,7 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('clear');
     });
 
-    // NEW: Broadcast background color changes
+    // Broadcast background color changes
     socket.on('bgColor', (color) => {
         socket.broadcast.emit('bgColor', color);
     });
