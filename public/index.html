@@ -8,45 +8,63 @@
         body, html {
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Stop the page from scrolling */
+            overflow: hidden;
             background-color: #f0f0f0;
             font-family: sans-serif;
         }
         canvas {
             display: block;
             background-color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        /* Styles for the floating toolbar */
+        /* Updated Toolbar for mobile fitting */
         .toolbar {
             position: absolute;
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
             background: white;
-            padding: 10px 20px;
+            padding: 10px 15px;
             border-radius: 30px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
-            z-index: 10; /* Keeps it above the canvas */
+            z-index: 10;
+            width: 90%; /* Keeps it from going off-screen on phones */
+            max-width: 400px;
+            justify-content: space-between;
         }
         button {
-            padding: 8px 15px;
+            padding: 8px 12px;
             border: none;
-            background-color: #ff4d4d;
-            color: white;
             border-radius: 15px;
             font-weight: bold;
+            cursor: pointer;
+        }
+        #clearBtn {
+            background-color: #ff4d4d;
+            color: white;
+        }
+        #eraserBtn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        /* Style when eraser is active */
+        #eraserBtn.active {
+            background-color: #333;
+            color: white;
         }
         input[type="color"] {
             border: none;
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             padding: 0;
             border-radius: 50%;
             overflow: hidden;
+        }
+        /* Brush size slider */
+        input[type="range"] {
+            width: 80px;
         }
     </style>
 </head>
@@ -54,7 +72,9 @@
 
     <div class="toolbar">
         <input type="color" id="colorPicker" value="#000000">
-        <button id="clearBtn">Clear Board</button>
+        <input type="range" id="brushSize" min="1" max="20" value="4">
+        <button id="eraserBtn">Eraser</button>
+        <button id="clearBtn">Clear</button>
     </div>
 
     <canvas id="drawingBoard"></canvas>
@@ -64,23 +84,38 @@
         const socket = io();
         const canvas = document.getElementById('drawingBoard');
         const ctx = canvas.getContext('2d');
+        
+        // Toolbar Elements
         const colorPicker = document.getElementById('colorPicker');
+        const brushSize = document.getElementById('brushSize');
+        const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
 
-        // Make the canvas fill the entire phone screen
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
-        // Run it once, and listen for screen rotation
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
         let isDrawing = false;
         let currentX = 0;
         let currentY = 0;
+        let isEraser = false; // Tracks if we are erasing
 
-        // Helper function to get the exact X and Y coordinates
+        // Toggle Eraser On and Off
+        eraserBtn.addEventListener('click', () => {
+            isEraser = !isEraser;
+            // Add a visual cue to the button so you know it's on
+            eraserBtn.classList.toggle('active', isEraser);
+        });
+
+        // If you pick a new color, automatically turn the eraser off
+        colorPicker.addEventListener('change', () => {
+            isEraser = false;
+            eraserBtn.classList.remove('active');
+        });
+
         function getTouchPos(e) {
             const rect = canvas.getBoundingClientRect();
             return {
@@ -89,9 +124,7 @@
             };
         }
 
-        // 1. When you touch the screen
         canvas.addEventListener('touchstart', (e) => {
-            // Only stop scrolling if touching the canvas, not the toolbar
             if(e.target === canvas) e.preventDefault(); 
             isDrawing = true;
             const pos = getTouchPos(e);
@@ -99,59 +132,58 @@
             currentY = pos.y;
         }, { passive: false });
 
-        // 2. When you drag your finger
         canvas.addEventListener('touchmove', (e) => {
             if(e.target === canvas) e.preventDefault();
             if (!isDrawing) return;
 
             const pos = getTouchPos(e);
-            // Use the color from the color picker
-            const selectedColor = colorPicker.value;
-            drawLine(currentX, currentY, pos.x, pos.y, selectedColor, true);
             
-            // Update the current coordinates
+            // NEW: Determine color and size
+            const selectedColor = isEraser ? '#ffffff' : colorPicker.value;
+            const selectedSize = brushSize.value;
+
+            // Pass the size to our draw function
+            drawLine(currentX, currentY, pos.x, pos.y, selectedColor, selectedSize, true);
+            
             currentX = pos.x;
             currentY = pos.y;
         }, { passive: false });
 
-        // 3. When you lift your finger
         canvas.addEventListener('touchend', () => {
             isDrawing = false;
         });
 
-        // The core drawing function
-        function drawLine(x0, y0, x1, y1, color, emit) {
+        // NEW: drawLine now accepts a 'size' parameter
+        function drawLine(x0, y0, x1, y1, color, size, emit) {
             ctx.beginPath();
             ctx.moveTo(x0, y0);
             ctx.lineTo(x1, y1);
             ctx.strokeStyle = color;
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round'; // Makes the drawing lines smooth
+            ctx.lineWidth = size; // Uses the slider value
+            ctx.lineCap = 'round';
             ctx.stroke();
             ctx.closePath();
 
-            // If we are the ones drawing, send the coordinates to the server
+            // Send the coordinates, color, AND size to the server
             if (!emit) return;
-            socket.emit('drawing', { x0, y0, x1, y1, color });
+            socket.emit('drawing', { x0, y0, x1, y1, color, size });
         }
 
-        // Listen for drawing data from the server
+        // Listen for drawing data from your girlfriend
         socket.on('drawing', (data) => {
-            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, false);
+            // Use the data.size she sent so her line thickness matches on your screen
+            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
         });
 
-        // Function to clear the screen locally
         function clearCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        // When you click the clear button
         clearBtn.addEventListener('click', () => {
             clearCanvas();
-            socket.emit('clear'); // Tell the server we cleared it
+            socket.emit('clear');
         });
 
-        // When the server tells us the other person cleared the board
         socket.on('clear', () => {
             clearCanvas();
         });
