@@ -12,6 +12,7 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('A new artist connected:', socket.id);
 
+    // Existing tools
     socket.on('drawing', (data) => socket.broadcast.emit('drawing', data));
     socket.on('stamp', (data) => socket.broadcast.emit('stamp', data));
     socket.on('text', (data) => socket.broadcast.emit('text', data));
@@ -20,9 +21,13 @@ io.on('connection', (socket) => {
     socket.on('bgColor', (color) => socket.broadcast.emit('bgColor', color));
     socket.on('pointer', (data) => socket.broadcast.emit('pointer', data));
     socket.on('undo', () => socket.broadcast.emit('undo'));
-    
-    // NEW: Broadcast perfect shapes
     socket.on('shape', (data) => socket.broadcast.emit('shape', data));
+    
+    // NEW: Broadcast Paint Bucket fills
+    socket.on('fill', (data) => socket.broadcast.emit('fill', data));
+    
+    // NEW: Broadcast Canva Coloring Templates
+    socket.on('template', (data) => socket.broadcast.emit('template', data));
 
     socket.on('disconnect', () => console.log('An artist disconnected:', socket.id));
 });
