@@ -18,7 +18,6 @@
             background-color: transparent; 
         }
         
-        /* Premium Toolbar Design */
         .toolbar {
             position: absolute;
             bottom: 20px;
@@ -34,7 +33,7 @@
             align-items: center;
             z-index: 10;
             max-width: 90%;
-            overflow-x: auto; /* Swipe to see all tools */
+            overflow-x: auto;
             white-space: nowrap;
         }
         .toolbar::-webkit-scrollbar { display: none; }
@@ -65,6 +64,7 @@
         
         #clearBtn { background-color: #ffeaea; }
         #saveBtn { background-color: #eaf8ff; }
+        #imageBtn { background-color: #fff0d4; }
         
         .active-tool {
             background-color: #333 !important;
@@ -89,13 +89,15 @@
             accent-color: #333;
         }
 
-        /* NEW: Dropdown style for emojis */
         select {
             font-size: 20px;
             border: none;
             background: transparent;
             outline: none;
         }
+
+        /* Hidden file input for uploading images */
+        #imageLoader { display: none; }
     </style>
 </head>
 <body>
@@ -112,19 +114,29 @@
         </div>
 
         <div class="tool-group">
-            <span>Stamp Mode</span>
+            <span>Stamp</span>
             <button id="stampBtn">💖</button>
         </div>
         <div class="tool-group">
-            <span>Pick Emoji</span>
+            <span style="visibility:hidden">Pick</span>
             <select id="emojiPicker">
                 <option value="❤️">❤️</option>
                 <option value="⭐">⭐</option>
                 <option value="🌸">🌸</option>
-                <option value="🔥">🔥</option>
                 <option value="😂">😂</option>
                 <option value="✨">✨</option>
             </select>
+        </div>
+
+        <div class="tool-group">
+            <span>Text</span>
+            <button id="textBtn">🔤</button>
+        </div>
+
+        <div class="tool-group">
+            <span>Photo</span>
+            <button id="imageBtn" onclick="document.getElementById('imageLoader').click();">📷</button>
+            <input type="file" id="imageLoader" accept="image/*">
         </div>
 
         <div class="tool-group">
@@ -133,7 +145,7 @@
         </div>
 
         <div class="tool-group">
-            <span>BG Color</span>
+            <span>BG</span>
             <input type="color" id="bgColorPicker" value="#ffffff">
         </div>
 
@@ -163,10 +175,12 @@
         const clearBtn = document.getElementById('clearBtn');
         const bgColorPicker = document.getElementById('bgColorPicker');
         const saveBtn = document.getElementById('saveBtn');
-        
-        // NEW UI Elements
         const stampBtn = document.getElementById('stampBtn');
         const emojiPicker = document.getElementById('emojiPicker');
+        
+        // NEW UI Elements
+        const textBtn = document.getElementById('textBtn');
+        const imageLoader = document.getElementById('imageLoader');
 
         function resizeCanvas() {
             const tempCanvas = document.createElement('canvas');
@@ -185,33 +199,41 @@
         let isDrawing = false;
         let currentX = 0;
         let currentY = 0;
+        
+        // Tool States
         let isEraser = false; 
-        let isStamping = false; // NEW: Track if stamp mode is on
+        let isStamping = false; 
+        let isTextMode = false; // NEW
 
         // --- Tool Toggles ---
+        function resetTools() {
+            isEraser = false;
+            isStamping = false;
+            isTextMode = false;
+            eraserBtn.classList.remove('active-tool');
+            stampBtn.classList.remove('active-tool');
+            textBtn.classList.remove('active-tool');
+        }
 
         eraserBtn.addEventListener('click', () => {
-            isEraser = !isEraser;
-            isStamping = false; // Turn off stamping
-            updateToolUI();
+            const wasActive = isEraser;
+            resetTools();
+            if (!wasActive) { isEraser = true; eraserBtn.classList.add('active-tool'); }
         });
 
         stampBtn.addEventListener('click', () => {
-            isStamping = !isStamping;
-            isEraser = false; // Turn off eraser
-            updateToolUI();
+            const wasActive = isStamping;
+            resetTools();
+            if (!wasActive) { isStamping = true; stampBtn.classList.add('active-tool'); }
         });
 
-        colorPicker.addEventListener('change', () => {
-            isEraser = false;
-            isStamping = false;
-            updateToolUI();
+        textBtn.addEventListener('click', () => {
+            const wasActive = isTextMode;
+            resetTools();
+            if (!wasActive) { isTextMode = true; textBtn.classList.add('active-tool'); }
         });
 
-        function updateToolUI() {
-            eraserBtn.classList.toggle('active-tool', isEraser);
-            stampBtn.classList.toggle('active-tool', isStamping);
-        }
+        colorPicker.addEventListener('change', resetTools);
 
         // --- Background Color ---
         function setBackgroundColor(color, emit) {
@@ -237,13 +259,23 @@
             if(e.target === canvas) e.preventDefault(); 
             const pos = getTouchPos(e);
 
-            // NEW: If stamping is on, draw an emoji instead of a line!
+            // Handle Text Mode
+            if (isTextMode) {
+                const text = prompt("Type your message:");
+                if (text) {
+                    const size = brushSize.value * 4; // Make text readable
+                    const color = colorPicker.value;
+                    drawText(text, pos.x, pos.y, color, size, true);
+                }
+                return;
+            }
+
+            // Handle Stamp Mode
             if (isStamping) {
                 const emoji = emojiPicker.value;
-                // Multiply brush size by 4 to make the emoji big enough to see
                 const size = brushSize.value * 4; 
                 drawStamp(pos.x, pos.y, emoji, size, true);
-                return; // Stop here so it doesn't draw a line
+                return; 
             }
 
             isDrawing = true;
@@ -253,8 +285,7 @@
 
         canvas.addEventListener('touchmove', (e) => {
             if(e.target === canvas) e.preventDefault();
-            // Stop drawing lines if we are in stamp mode
-            if (!isDrawing || isStamping) return;
+            if (!isDrawing || isStamping || isTextMode) return;
 
             const pos = getTouchPos(e);
             ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
@@ -289,22 +320,74 @@
             ctx.globalCompositeOperation = 'source-over'; 
         });
 
-        // NEW: Stamp Drawing Logic
         function drawStamp(x, y, emoji, size, emit) {
             ctx.font = `${size}px Arial`;
-            ctx.textAlign = 'center'; // Centers the emoji exactly on your finger
+            ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.fillStyle = "black"; // Emojis handle their own color, but fallback
             ctx.fillText(emoji, x, y);
 
             if (!emit) return;
             socket.emit('stamp', { x, y, emoji, size });
         }
 
-        socket.on('stamp', (data) => {
-            drawStamp(data.x, data.y, data.emoji, data.size, false);
+        socket.on('stamp', (data) => { drawStamp(data.x, data.y, data.emoji, data.size, false); });
+
+        // NEW: Draw Text Logic
+        function drawText(text, x, y, color, size, emit) {
+            ctx.font = `bold ${size}px system-ui`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = color;
+            ctx.fillText(text, x, y);
+
+            if (!emit) return;
+            socket.emit('text', { text, x, y, color, size });
+        }
+
+        socket.on('text', (data) => { drawText(data.text, data.x, data.y, data.color, data.size, false); });
+
+        // NEW: Image Upload Logic
+        imageLoader.addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    // Compress and scale the image to fit mobile screens
+                    const maxDim = window.innerWidth * 0.8; // 80% of screen width
+                    let scale = 1;
+                    if (img.width > maxDim || img.height > maxDim) {
+                        scale = Math.min(maxDim / img.width, maxDim / img.height);
+                    }
+                    const w = img.width * scale;
+                    const h = img.height * scale;
+
+                    // Center it on the screen
+                    const startX = (canvas.width - w) / 2;
+                    const startY = (canvas.height - h) / 2;
+                    
+                    ctx.drawImage(img, startX, startY, w, h);
+
+                    // Compress to JPEG for WebSocket sending
+                    const tempC = document.createElement('canvas');
+                    tempC.width = w; tempC.height = h;
+                    tempC.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const compressedData = tempC.toDataURL('image/jpeg', 0.6);
+
+                    socket.emit('image', { imgData: compressedData, x: startX, y: startY, w: w, h: h });
+                }
+                img.src = event.target.result;
+            }
+            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        }, false);
+
+        socket.on('image', (data) => {
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, data.x, data.y, data.w, data.h);
+            img.src = data.imgData;
         });
 
-        // --- Buttons ---
+        // --- Action Buttons ---
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
         clearBtn.addEventListener('click', () => { clearCanvas(); socket.emit('clear'); });
         socket.on('clear', () => { clearCanvas(); });
@@ -314,7 +397,6 @@
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = canvas.width;
             tempCanvas.height = canvas.height;
-
             tempCtx.fillStyle = document.body.style.backgroundColor || '#ffffff';
             tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
             tempCtx.drawImage(canvas, 0, 0);
