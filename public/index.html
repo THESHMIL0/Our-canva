@@ -28,15 +28,18 @@
         select { font-size: 20px; border: none; background: transparent; outline: none; }
         #imageLoader { display: none; }
 
-        /* NEW: The Live Pointer */
+        /* NEW: Styling for the text input box inside the toolbar */
+        #textInput {
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            padding: 5px 10px;
+            width: 100px;
+            font-size: 14px;
+            outline: none;
+        }
+
         #partnerPointer {
-            position: absolute;
-            font-size: 24px;
-            pointer-events: none; /* So it doesn't block your drawing */
-            transition: opacity 0.3s;
-            opacity: 0; /* Hidden by default */
-            z-index: 5;
-            transform: translate(-50%, -100%); /* Centers the emoji on the finger */
+            position: absolute; font-size: 24px; pointer-events: none; transition: opacity 0.3s; opacity: 0; z-index: 5; transform: translate(-50%, -100%);
         }
     </style>
 </head>
@@ -47,16 +50,17 @@
     <div class="toolbar">
         <div class="tool-group"><span>Pen</span><input type="color" id="colorPicker" value="#000000"></div>
         <div class="tool-group"><span>Size</span><input type="range" id="brushSize" min="1" max="50" value="5"></div>
-        
         <div class="tool-group"><span>Highlight</span><button id="highlightBtn">🖍️</button></div>
-        
         <div class="tool-group"><span>Undo</span><button id="undoBtn">↩️</button></div>
 
         <div class="tool-group"><span>Stamp</span><button id="stampBtn">💖</button></div>
         <div class="tool-group"><span style="visibility:hidden">Pick</span>
-            <select id="emojiPicker"><option value="❤️">❤️</option><option value="⭐">⭐</option><option value="😂">😂</option></select>
+            <select id="emojiPicker"><option value="❤️">❤️</option><option value="⭐">⭐</option><option value="😂">😂</option><option value="🔥">🔥</option></select>
         </div>
+        
         <div class="tool-group"><span>Text</span><button id="textBtn">🔤</button></div>
+        <div class="tool-group"><span>Type Here</span><input type="text" id="textInput" placeholder="Hello!"></div>
+        
         <div class="tool-group"><span>Photo</span><button id="imageBtn" onclick="document.getElementById('imageLoader').click();">📷</button><input type="file" id="imageLoader" accept="image/*"></div>
         <div class="tool-group"><span>Eraser</span><button id="eraserBtn">🧽</button></div>
         <div class="tool-group"><span>Clear</span><button id="clearBtn">🗑️</button></div>
@@ -80,20 +84,20 @@
         const textBtn = document.getElementById('textBtn');
         const highlightBtn = document.getElementById('highlightBtn');
         const undoBtn = document.getElementById('undoBtn');
+        const textInput = document.getElementById('textInput');
 
-        // NEW: Undo History Array
         let history = [];
         const MAX_HISTORY = 10;
 
         function saveState() {
             history.push(canvas.toDataURL());
-            if (history.length > MAX_HISTORY) history.shift(); // Keep only last 10 to save memory
+            if (history.length > MAX_HISTORY) history.shift(); 
         }
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            saveState(); // Save empty screen state
+            saveState(); 
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
@@ -119,43 +123,88 @@
         }
 
         let pointerTimeout;
+        
+        // NEW: Drag and Drop variables
+        let isDraggingItem = false;
+        let dragType = ''; 
+        let dragData = {};
+        let savedImageData = null;
+        let lastX = 0, lastY = 0;
 
         canvas.addEventListener('touchstart', (e) => {
             if(e.target === canvas) e.preventDefault(); 
             const pos = getTouchPos(e);
+            lastX = pos.x; lastY = pos.y;
             
             socket.emit('pointer', {x: pos.x, y: pos.y});
 
-            if (isTextMode) {
-                const text = prompt("Type your message:");
-                if (text) drawText(text, pos.x, pos.y, colorPicker.value, brushSize.value * 4, true);
-                saveState(); return;
+            // Handle Drag-to-Place for Text and Stamps
+            if (isTextMode || isStamping) {
+                isDraggingItem = true;
+                dragType = isTextMode ? 'text' : 'stamp';
+                
+                // Take a quick photo of the canvas before we draw the text
+                savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                if (isTextMode) {
+                    const textVal = textInput.value;
+                    if (!textVal) { alert("Please type something in the text box first!"); isDraggingItem = false; return; }
+                    dragData = { text: textVal, size: brushSize.value * 4, color: colorPicker.value };
+                    drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false);
+                } else {
+                    dragData = { emoji: document.getElementById('emojiPicker').value, size: brushSize.value * 4 };
+                    drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false);
+                }
+                return; 
             }
-            if (isStamping) {
-                drawStamp(pos.x, pos.y, document.getElementById('emojiPicker').value, brushSize.value * 4, true);
-                saveState(); return; 
-            }
+
             isDrawing = true; currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             if(e.target === canvas) e.preventDefault();
             const pos = getTouchPos(e);
+            lastX = pos.x; lastY = pos.y;
             
-            // NEW: Broadcast pointer position even if not drawing
             socket.emit('pointer', {x: pos.x, y: pos.y});
 
-            if (!isDrawing || isStamping || isTextMode) return;
+            // NEW: If dragging text/stamp, move it with the finger!
+            if (isDraggingItem) {
+                // Wipe the screen back to what it was right before we touched it
+                ctx.putImageData(savedImageData, 0, 0);
+                
+                // Draw the text/stamp at the new finger position
+                if (dragType === 'text') {
+                    drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false);
+                } else {
+                    drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false);
+                }
+                return;
+            }
+
+            if (!isDrawing) return;
 
             ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
-            ctx.globalAlpha = isHighlight ? 0.3 : 1.0; // NEW: Make transparent if highlighting
+            ctx.globalAlpha = isHighlight ? 0.3 : 1.0; 
 
             drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser, isHighlight);
             currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchend', () => {
-            if (isDrawing) saveState(); // Save after drawing a line
+            // NEW: Lock the text/stamp in place and tell the server!
+            if (isDraggingItem) {
+                isDraggingItem = false;
+                if (dragType === 'text') {
+                    socket.emit('text', { text: dragData.text, x: lastX, y: lastY, color: dragData.color, size: dragData.size });
+                } else {
+                    socket.emit('stamp', { emoji: dragData.emoji, x: lastX, y: lastY, size: dragData.size });
+                }
+                saveState();
+                return;
+            }
+
+            if (isDrawing) saveState(); 
             isDrawing = false;
             ctx.globalCompositeOperation = 'source-over';
             ctx.globalAlpha = 1.0;
@@ -188,21 +237,18 @@
         }
         socket.on('text', (data) => drawText(data.text, data.x, data.y, data.color, data.size, false));
 
-        // --- NEW: Live Pointer Logic ---
         socket.on('pointer', (data) => {
             partnerPointer.style.left = data.x + 'px';
             partnerPointer.style.top = data.y + 'px';
-            partnerPointer.style.opacity = 1; // Show it
-            
+            partnerPointer.style.opacity = 1; 
             clearTimeout(pointerTimeout);
-            pointerTimeout = setTimeout(() => { partnerPointer.style.opacity = 0; }, 1000); // Hide after 1 sec of no movement
+            pointerTimeout = setTimeout(() => { partnerPointer.style.opacity = 0; }, 1000); 
         });
 
-        // --- NEW: Undo Logic ---
         function performUndo(emit) {
             if (history.length > 1) {
-                history.pop(); // Remove current state
-                const previousState = history[history.length - 1]; // Get last state
+                history.pop(); 
+                const previousState = history[history.length - 1]; 
                 const img = new Image();
                 img.src = previousState;
                 img.onload = () => {
@@ -219,6 +265,34 @@
         clearBtn.addEventListener('click', () => { clearCanvas(); socket.emit('clear'); });
         socket.on('clear', () => { clearCanvas(); });
 
+        // Image loading logic
+        imageLoader.addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const maxDim = window.innerWidth * 0.8; 
+                    let scale = 1;
+                    if (img.width > maxDim || img.height > maxDim) scale = Math.min(maxDim / img.width, maxDim / img.height);
+                    const w = img.width * scale, h = img.height * scale;
+                    const startX = (canvas.width - w) / 2, startY = (canvas.height - h) / 2;
+                    ctx.drawImage(img, startX, startY, w, h);
+                    saveState();
+
+                    const tempC = document.createElement('canvas');
+                    tempC.width = w; tempC.height = h;
+                    tempC.getContext('2d').drawImage(img, 0, 0, w, h);
+                    socket.emit('image', { imgData: tempC.toDataURL('image/jpeg', 0.6), x: startX, y: startY, w: w, h: h });
+                }
+                img.src = event.target.result;
+            }
+            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
+        }, false);
+        socket.on('image', (data) => {
+            const img = new Image();
+            img.onload = () => { ctx.drawImage(img, data.x, data.y, data.w, data.h); saveState(); }
+            img.src = data.imgData;
+        });
     </script>
 </body>
 </html>
