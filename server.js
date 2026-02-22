@@ -17,9 +17,19 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('drawing', data);
     });
 
-    // NEW: Broadcast emoji stamps
+    // Broadcast emoji stamps
     socket.on('stamp', (data) => {
         socket.broadcast.emit('stamp', data);
+    });
+
+    // NEW: Broadcast images/photos
+    socket.on('image', (data) => {
+        socket.broadcast.emit('image', data);
+    });
+
+    // NEW: Broadcast typed text
+    socket.on('text', (data) => {
+        socket.broadcast.emit('text', data);
     });
 
     // Broadcast the clear command
