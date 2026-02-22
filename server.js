@@ -14,16 +14,15 @@ io.on('connection', (socket) => {
 
     socket.on('drawing', (data) => socket.broadcast.emit('drawing', data));
     socket.on('stamp', (data) => socket.broadcast.emit('stamp', data));
-    socket.on('image', (data) => socket.broadcast.emit('image', data));
     socket.on('text', (data) => socket.broadcast.emit('text', data));
+    socket.on('image', (data) => socket.broadcast.emit('image', data));
     socket.on('clear', () => socket.broadcast.emit('clear'));
     socket.on('bgColor', (color) => socket.broadcast.emit('bgColor', color));
-
-    // NEW: Broadcast live pointer movements
     socket.on('pointer', (data) => socket.broadcast.emit('pointer', data));
+    socket.on('undo', () => socket.broadcast.emit('undo'));
     
-    // NEW: Broadcast the undo command
-    socket.on('undo', (data) => socket.broadcast.emit('undo', data));
+    // NEW: Broadcast perfect shapes
+    socket.on('shape', (data) => socket.broadcast.emit('shape', data));
 
     socket.on('disconnect', () => console.log('An artist disconnected:', socket.id));
 });
