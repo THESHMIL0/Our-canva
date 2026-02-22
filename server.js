@@ -19,6 +19,11 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('drawing', data);
     });
 
+    // Listen for the clear command and broadcast it
+    socket.on('clear', () => {
+        socket.broadcast.emit('clear');
+    });
+
     socket.on('disconnect', () => {
         console.log('An artist disconnected:', socket.id);
     });
