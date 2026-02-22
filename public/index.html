@@ -9,24 +9,23 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #ffffff; /* Default background */
+            background-color: #ffffff;
             font-family: system-ui, -apple-system, sans-serif;
-            transition: background-color 0.3s ease; /* Smooth background transition */
+            transition: background-color 0.3s ease;
         }
         canvas {
             display: block;
-            /* Canvas is transparent so the body background color shows through */
             background-color: transparent; 
         }
         
-        /* ✨ PREMIUM TOOLBAR DESIGN ✨ */
+        /* Premium Toolbar Design */
         .toolbar {
             position: absolute;
-            bottom: 20px; /* Moved to bottom for easier thumb access on mobile */
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.85); /* Glass effect */
-            backdrop-filter: blur(10px); /* Blurs what is behind the toolbar */
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
             padding: 12px 20px;
             border-radius: 40px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.15);
@@ -35,10 +34,9 @@
             align-items: center;
             z-index: 10;
             max-width: 90%;
-            overflow-x: auto; /* Lets you swipe through tools if they don't fit */
+            overflow-x: auto; /* Swipe to see all tools */
             white-space: nowrap;
         }
-        /* Hide scrollbar for a cleaner look */
         .toolbar::-webkit-scrollbar { display: none; }
 
         .tool-group {
@@ -63,19 +61,17 @@
             box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1);
             transition: transform 0.1s;
         }
-        button:active {
-            transform: scale(0.9); /* Satisfying click effect */
-        }
+        button:active { transform: scale(0.9); }
+        
         #clearBtn { background-color: #ffeaea; }
         #saveBtn { background-color: #eaf8ff; }
         
-        #eraserBtn.active {
-            background-color: #333;
-            color: white;
+        .active-tool {
+            background-color: #333 !important;
+            color: white !important;
             box-shadow: none;
         }
 
-        /* Styling the color inputs to look like premium circles */
         input[type="color"] {
             -webkit-appearance: none;
             border: 2px solid #ddd;
@@ -84,14 +80,21 @@
             padding: 0;
             border-radius: 50%;
             overflow: hidden;
-            cursor: pointer;
         }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
 
         input[type="range"] {
             width: 80px;
-            accent-color: #333; /* Dark slider */
+            accent-color: #333;
+        }
+
+        /* NEW: Dropdown style for emojis */
+        select {
+            font-size: 20px;
+            border: none;
+            background: transparent;
+            outline: none;
         }
     </style>
 </head>
@@ -105,7 +108,23 @@
 
         <div class="tool-group">
             <span>Size</span>
-            <input type="range" id="brushSize" min="1" max="30" value="5">
+            <input type="range" id="brushSize" min="1" max="50" value="5">
+        </div>
+
+        <div class="tool-group">
+            <span>Stamp Mode</span>
+            <button id="stampBtn">💖</button>
+        </div>
+        <div class="tool-group">
+            <span>Pick Emoji</span>
+            <select id="emojiPicker">
+                <option value="❤️">❤️</option>
+                <option value="⭐">⭐</option>
+                <option value="🌸">🌸</option>
+                <option value="🔥">🔥</option>
+                <option value="😂">😂</option>
+                <option value="✨">✨</option>
+            </select>
         </div>
 
         <div class="tool-group">
@@ -137,30 +156,29 @@
         const canvas = document.getElementById('drawingBoard');
         const ctx = canvas.getContext('2d');
         
-        // Toolbar Elements
+        // UI Elements
         const colorPicker = document.getElementById('colorPicker');
         const brushSize = document.getElementById('brushSize');
         const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
         const bgColorPicker = document.getElementById('bgColorPicker');
         const saveBtn = document.getElementById('saveBtn');
+        
+        // NEW UI Elements
+        const stampBtn = document.getElementById('stampBtn');
+        const emojiPicker = document.getElementById('emojiPicker');
 
         function resizeCanvas() {
-            // Save current drawing
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = canvas.width;
             tempCanvas.height = canvas.height;
             tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
 
-            // Resize
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-
-            // Restore drawing
             ctx.drawImage(tempCanvas, 0, 0);
         }
         window.addEventListener('resize', resizeCanvas);
-        // Initialize exact size immediately
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -168,35 +186,45 @@
         let currentX = 0;
         let currentY = 0;
         let isEraser = false; 
+        let isStamping = false; // NEW: Track if stamp mode is on
 
-        // Eraser Toggle
+        // --- Tool Toggles ---
+
         eraserBtn.addEventListener('click', () => {
             isEraser = !isEraser;
-            eraserBtn.classList.toggle('active', isEraser);
+            isStamping = false; // Turn off stamping
+            updateToolUI();
+        });
+
+        stampBtn.addEventListener('click', () => {
+            isStamping = !isStamping;
+            isEraser = false; // Turn off eraser
+            updateToolUI();
         });
 
         colorPicker.addEventListener('change', () => {
             isEraser = false;
-            eraserBtn.classList.remove('active');
+            isStamping = false;
+            updateToolUI();
         });
 
-        // NEW: Background Color Logic
-        function setBackgroundColor(color, emit) {
-            document.body.style.backgroundColor = color;
-            if (emit) {
-                socket.emit('bgColor', color);
-            }
+        function updateToolUI() {
+            eraserBtn.classList.toggle('active-tool', isEraser);
+            stampBtn.classList.toggle('active-tool', isStamping);
         }
 
-        bgColorPicker.addEventListener('input', (e) => {
-            setBackgroundColor(e.target.value, true);
-        });
-
+        // --- Background Color ---
+        function setBackgroundColor(color, emit) {
+            document.body.style.backgroundColor = color;
+            if (emit) socket.emit('bgColor', color);
+        }
+        bgColorPicker.addEventListener('input', (e) => setBackgroundColor(e.target.value, true));
         socket.on('bgColor', (color) => {
             bgColorPicker.value = color;
             setBackgroundColor(color, false);
         });
 
+        // --- Touch Interactions ---
         function getTouchPos(e) {
             const rect = canvas.getBoundingClientRect();
             return {
@@ -207,33 +235,40 @@
 
         canvas.addEventListener('touchstart', (e) => {
             if(e.target === canvas) e.preventDefault(); 
-            isDrawing = true;
             const pos = getTouchPos(e);
+
+            // NEW: If stamping is on, draw an emoji instead of a line!
+            if (isStamping) {
+                const emoji = emojiPicker.value;
+                // Multiply brush size by 4 to make the emoji big enough to see
+                const size = brushSize.value * 4; 
+                drawStamp(pos.x, pos.y, emoji, size, true);
+                return; // Stop here so it doesn't draw a line
+            }
+
+            isDrawing = true;
             currentX = pos.x;
             currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             if(e.target === canvas) e.preventDefault();
-            if (!isDrawing) return;
+            // Stop drawing lines if we are in stamp mode
+            if (!isDrawing || isStamping) return;
 
             const pos = getTouchPos(e);
-            
-            // If erasing, we actually just use the 'destination-out' trick for a true transparent erase!
             ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
-            
             drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser);
-            
             currentX = pos.x;
             currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchend', () => {
             isDrawing = false;
-            // Reset composite operation just in case
             ctx.globalCompositeOperation = 'source-over';
         });
 
+        // --- Drawing Logic ---
         function drawLine(x0, y0, x1, y1, color, size, emit, erasing) {
             ctx.beginPath();
             ctx.moveTo(x0, y0);
@@ -251,38 +286,39 @@
         socket.on('drawing', (data) => {
             ctx.globalCompositeOperation = data.erasing ? 'destination-out' : 'source-over';
             drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing);
-            ctx.globalCompositeOperation = 'source-over'; // reset
+            ctx.globalCompositeOperation = 'source-over'; 
         });
 
-        function clearCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // NEW: Stamp Drawing Logic
+        function drawStamp(x, y, emoji, size, emit) {
+            ctx.font = `${size}px Arial`;
+            ctx.textAlign = 'center'; // Centers the emoji exactly on your finger
+            ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, x, y);
+
+            if (!emit) return;
+            socket.emit('stamp', { x, y, emoji, size });
         }
 
-        clearBtn.addEventListener('click', () => {
-            clearCanvas();
-            socket.emit('clear');
+        socket.on('stamp', (data) => {
+            drawStamp(data.x, data.y, data.emoji, data.size, false);
         });
 
-        socket.on('clear', () => {
-            clearCanvas();
-        });
+        // --- Buttons ---
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        clearBtn.addEventListener('click', () => { clearCanvas(); socket.emit('clear'); });
+        socket.on('clear', () => { clearCanvas(); });
 
-        // NEW: Save Image Function
         saveBtn.addEventListener('click', () => {
-            // Create a temporary canvas to merge the background color and the drawing
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
             tempCanvas.width = canvas.width;
             tempCanvas.height = canvas.height;
 
-            // Fill with the chosen background color
             tempCtx.fillStyle = document.body.style.backgroundColor || '#ffffff';
             tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-            // Draw our actual transparent canvas on top
             tempCtx.drawImage(canvas, 0, 0);
 
-            // Trigger the download
             const link = document.createElement('a');
             link.download = 'Our-Artwork.png';
             link.href = tempCanvas.toDataURL('image/png');
