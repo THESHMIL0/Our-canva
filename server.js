@@ -7,21 +7,24 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Tell the server to serve the frontend files from the "public" folder
 app.use(express.static('public'));
 
-// Listen for connections from you and your girlfriend
 io.on('connection', (socket) => {
     console.log('A new artist connected:', socket.id);
 
-    // Listen for drawing data from one person, and broadcast it to everyone else
+    // Broadcast drawing data
     socket.on('drawing', (data) => {
         socket.broadcast.emit('drawing', data);
     });
 
-    // Listen for the clear command and broadcast it
+    // Broadcast the clear command
     socket.on('clear', () => {
         socket.broadcast.emit('clear');
+    });
+
+    // NEW: Broadcast background color changes
+    socket.on('bgColor', (color) => {
+        socket.broadcast.emit('bgColor', color);
     });
 
     socket.on('disconnect', () => {
