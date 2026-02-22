@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Our Premium Canvas 🎨</title>
+    <title>Our Pro Canvas 🎨</title>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #ffffff; font-family: system-ui, sans-serif; transition: background-color 0.3s ease; }
         canvas { display: block; background-color: transparent; }
@@ -13,217 +13,175 @@
             background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);
             padding: 12px 20px; border-radius: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             display: flex; gap: 15px; align-items: center; z-index: 10; max-width: 90%; overflow-x: auto; white-space: nowrap;
+            transition: all 0.3s ease;
         }
         .toolbar::-webkit-scrollbar { display: none; }
-        .tool-group { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; color: #555; gap: 4px; }
+        .tool-group { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; color: #555; gap: 4px; transition: color 0.3s; }
         
-        button { padding: 10px; border: none; border-radius: 50%; font-size: 18px; width: 45px; height: 45px; cursor: pointer; background-color: #f0f0f0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 10px; border: none; border-radius: 50%; font-size: 18px; width: 45px; height: 45px; cursor: pointer; background-color: #f0f0f0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s; }
         button:active { transform: scale(0.9); }
-        .active-tool { background-color: #333 !important; color: white !important; box-shadow: none; }
+        .active-tool { background-color: #333 !important; color: white !important; box-shadow: 0 0 10px rgba(0,0,0,0.3) !important; }
+        
+        body.dark-ui .toolbar { background: rgba(30, 30, 30, 0.85); color: #fff; }
+        body.dark-ui .tool-group { color: #ccc; }
+        body.dark-ui button { background-color: #444; box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.5); }
+        body.dark-ui .active-tool { background-color: #4facfe !important; }
+        body.dark-ui select, body.dark-ui input[type="text"] { color: white; background: #333; border-color: #555; }
         
         #clearBtn { background-color: #ffeaea; } #undoBtn { background-color: #fff0d4; }
         input[type="color"] { -webkit-appearance: none; border: 2px solid #ddd; width: 40px; height: 40px; padding: 0; border-radius: 50%; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; } input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
         input[type="range"] { width: 80px; accent-color: #333; }
-        select { font-size: 20px; border: none; background: transparent; outline: none; }
+        select { font-size: 18px; border: none; background: transparent; outline: none; }
         #imageLoader { display: none; }
 
-        /* NEW: Styling for the text input box inside the toolbar */
-        #textInput {
-            border: 2px solid #ddd;
-            border-radius: 15px;
-            padding: 5px 10px;
-            width: 100px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        #partnerPointer {
-            position: absolute; font-size: 24px; pointer-events: none; transition: opacity 0.3s; opacity: 0; z-index: 5; transform: translate(-50%, -100%);
-        }
+        #textInput { border: 2px solid #ddd; border-radius: 15px; padding: 5px 10px; width: 90px; font-size: 14px; outline: none; }
+        #partnerPointer { position: absolute; font-size: 24px; pointer-events: none; transition: opacity 0.3s; opacity: 0; z-index: 5; transform: translate(-50%, -100%); }
     </style>
 </head>
 <body>
-
     <div id="partnerPointer">👆</div>
-
-    <div class="toolbar">
+    <div class="toolbar" id="mainToolbar">
+        <div class="tool-group"><span>UI</span><button id="darkModeBtn">🌙</button></div>
         <div class="tool-group"><span>Pen</span><input type="color" id="colorPicker" value="#000000"></div>
         <div class="tool-group"><span>Size</span><input type="range" id="brushSize" min="1" max="50" value="5"></div>
+        <div class="tool-group"><span>Neon</span><button id="neonBtn">✨</button></div>
+        <div class="tool-group"><span>Shape</span><button id="shapeBtn">🟦</button></div>
+        <div class="tool-group"><span style="visibility:hidden">Pick</span>
+            <select id="shapePicker"><option value="rect">Rectangle</option><option value="circle">Circle</option><option value="line">Line</option></select>
+        </div>
         <div class="tool-group"><span>Highlight</span><button id="highlightBtn">🖍️</button></div>
         <div class="tool-group"><span>Undo</span><button id="undoBtn">↩️</button></div>
-
         <div class="tool-group"><span>Stamp</span><button id="stampBtn">💖</button></div>
         <div class="tool-group"><span style="visibility:hidden">Pick</span>
             <select id="emojiPicker"><option value="❤️">❤️</option><option value="⭐">⭐</option><option value="😂">😂</option><option value="🔥">🔥</option></select>
         </div>
-        
         <div class="tool-group"><span>Text</span><button id="textBtn">🔤</button></div>
-        <div class="tool-group"><span>Type Here</span><input type="text" id="textInput" placeholder="Hello!"></div>
-        
+        <div class="tool-group"><span>Type</span><input type="text" id="textInput" placeholder="Hello!"></div>
         <div class="tool-group"><span>Photo</span><button id="imageBtn" onclick="document.getElementById('imageLoader').click();">📷</button><input type="file" id="imageLoader" accept="image/*"></div>
         <div class="tool-group"><span>Eraser</span><button id="eraserBtn">🧽</button></div>
+        <div class="tool-group"><span>BG</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
         <div class="tool-group"><span>Clear</span><button id="clearBtn">🗑️</button></div>
+        <div class="tool-group"><span>PNG</span><button id="saveBtn">💾</button></div>
+        <div class="tool-group"><span>PDF</span><button id="pdfBtn">📄</button></div>
     </div>
-
     <canvas id="drawingBoard"></canvas>
-
+    
     <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        const socket = io();
-        const canvas = document.getElementById('drawingBoard');
-        const ctx = canvas.getContext('2d');
+        const socket = io(); const canvas = document.getElementById('drawingBoard'); const ctx = canvas.getContext('2d');
         const partnerPointer = document.getElementById('partnerPointer');
-        
-        // UI
-        const colorPicker = document.getElementById('colorPicker');
-        const brushSize = document.getElementById('brushSize');
-        const eraserBtn = document.getElementById('eraserBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const stampBtn = document.getElementById('stampBtn');
-        const textBtn = document.getElementById('textBtn');
-        const highlightBtn = document.getElementById('highlightBtn');
-        const undoBtn = document.getElementById('undoBtn');
-        const textInput = document.getElementById('textInput');
+        const colorPicker = document.getElementById('colorPicker'); const brushSize = document.getElementById('brushSize');
+        const eraserBtn = document.getElementById('eraserBtn'); const clearBtn = document.getElementById('clearBtn');
+        const stampBtn = document.getElementById('stampBtn'); const textBtn = document.getElementById('textBtn');
+        const highlightBtn = document.getElementById('highlightBtn'); const undoBtn = document.getElementById('undoBtn');
+        const textInput = document.getElementById('textInput'); const bgColorPicker = document.getElementById('bgColorPicker');
+        const saveBtn = document.getElementById('saveBtn'); const neonBtn = document.getElementById('neonBtn');
+        const shapeBtn = document.getElementById('shapeBtn'); const shapePicker = document.getElementById('shapePicker');
+        const darkModeBtn = document.getElementById('darkModeBtn'); const pdfBtn = document.getElementById('pdfBtn');
 
-        let history = [];
-        const MAX_HISTORY = 10;
-
-        function saveState() {
-            history.push(canvas.toDataURL());
-            if (history.length > MAX_HISTORY) history.shift(); 
-        }
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            saveState(); 
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        let history = []; const MAX_HISTORY = 10;
+        function saveState() { history.push(canvas.toDataURL()); if (history.length > MAX_HISTORY) history.shift(); }
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; saveState(); }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
         let isDrawing = false, currentX = 0, currentY = 0;
-        let isEraser = false, isStamping = false, isTextMode = false, isHighlight = false;
-
+        let isEraser = false, isStamping = false, isTextMode = false, isHighlight = false, isNeon = false, isShapeMode = false;
         function resetTools() {
-            isEraser = isStamping = isTextMode = isHighlight = false;
+            isEraser = isStamping = isTextMode = isHighlight = isNeon = isShapeMode = false;
             eraserBtn.classList.remove('active-tool'); stampBtn.classList.remove('active-tool');
             textBtn.classList.remove('active-tool'); highlightBtn.classList.remove('active-tool');
+            neonBtn.classList.remove('active-tool'); shapeBtn.classList.remove('active-tool');
         }
 
         eraserBtn.addEventListener('click', () => { resetTools(); isEraser = true; eraserBtn.classList.add('active-tool'); });
         stampBtn.addEventListener('click', () => { resetTools(); isStamping = true; stampBtn.classList.add('active-tool'); });
         textBtn.addEventListener('click', () => { resetTools(); isTextMode = true; textBtn.classList.add('active-tool'); });
         highlightBtn.addEventListener('click', () => { resetTools(); isHighlight = true; highlightBtn.classList.add('active-tool'); });
-        colorPicker.addEventListener('change', resetTools);
+        neonBtn.addEventListener('click', () => { resetTools(); isNeon = true; neonBtn.classList.add('active-tool'); });
+        shapeBtn.addEventListener('click', () => { resetTools(); isShapeMode = true; shapeBtn.classList.add('active-tool'); });
+        colorPicker.addEventListener('change', () => { if(!isTextMode && !isStamping && !isShapeMode && !isNeon) resetTools(); });
 
-        function getTouchPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
-        }
+        function setBackgroundColor(color, emit) { document.body.style.backgroundColor = color; if (emit) socket.emit('bgColor', color); }
+        bgColorPicker.addEventListener('input', (e) => setBackgroundColor(e.target.value, true));
+        socket.on('bgColor', (color) => { bgColorPicker.value = color; setBackgroundColor(color, false); });
+        darkModeBtn.addEventListener('click', () => { document.body.classList.toggle('dark-ui'); });
 
-        let pointerTimeout;
-        
-        // NEW: Drag and Drop variables
-        let isDraggingItem = false;
-        let dragType = ''; 
-        let dragData = {};
-        let savedImageData = null;
-        let lastX = 0, lastY = 0;
+        function getTouchPos(e) { const rect = canvas.getBoundingClientRect(); return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top }; }
+        let pointerTimeout; let isDraggingItem = false, dragType = '', dragData = {}, savedImageData = null, lastX = 0, lastY = 0;
+        function applyNeon(color, size, active) { if (active) { ctx.shadowBlur = size * 2; ctx.shadowColor = color; } else { ctx.shadowBlur = 0; } }
 
         canvas.addEventListener('touchstart', (e) => {
             if(e.target === canvas) e.preventDefault(); 
-            const pos = getTouchPos(e);
-            lastX = pos.x; lastY = pos.y;
-            
+            const pos = getTouchPos(e); lastX = pos.x; lastY = pos.y; currentX = pos.x; currentY = pos.y;
             socket.emit('pointer', {x: pos.x, y: pos.y});
 
-            // Handle Drag-to-Place for Text and Stamps
-            if (isTextMode || isStamping) {
-                isDraggingItem = true;
-                dragType = isTextMode ? 'text' : 'stamp';
-                
-                // Take a quick photo of the canvas before we draw the text
+            if (isTextMode || isStamping || isShapeMode) {
+                isDraggingItem = true; dragType = isTextMode ? 'text' : (isShapeMode ? 'shape' : 'stamp');
                 savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                
                 if (isTextMode) {
-                    const textVal = textInput.value;
-                    if (!textVal) { alert("Please type something in the text box first!"); isDraggingItem = false; return; }
-                    dragData = { text: textVal, size: brushSize.value * 4, color: colorPicker.value };
+                    if (!textInput.value) { alert("Please type something!"); isDraggingItem = false; return; }
+                    dragData = { text: textInput.value, size: brushSize.value * 4, color: colorPicker.value };
                     drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false);
-                } else {
+                } else if (isStamping) {
                     dragData = { emoji: document.getElementById('emojiPicker').value, size: brushSize.value * 4 };
                     drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false);
+                } else if (isShapeMode) {
+                    dragData = { type: shapePicker.value, color: colorPicker.value, size: brushSize.value, neon: isNeon };
                 }
                 return; 
             }
-
-            isDrawing = true; currentX = pos.x; currentY = pos.y;
+            isDrawing = true; 
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             if(e.target === canvas) e.preventDefault();
-            const pos = getTouchPos(e);
-            lastX = pos.x; lastY = pos.y;
-            
-            socket.emit('pointer', {x: pos.x, y: pos.y});
-
-            // NEW: If dragging text/stamp, move it with the finger!
+            const pos = getTouchPos(e); socket.emit('pointer', {x: pos.x, y: pos.y});
             if (isDraggingItem) {
-                // Wipe the screen back to what it was right before we touched it
-                ctx.putImageData(savedImageData, 0, 0);
-                
-                // Draw the text/stamp at the new finger position
-                if (dragType === 'text') {
-                    drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false);
-                } else {
-                    drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false);
-                }
-                return;
+                ctx.putImageData(savedImageData, 0, 0); 
+                if (dragType === 'text') drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false);
+                else if (dragType === 'stamp') drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false);
+                else if (dragType === 'shape') drawShape(dragData.type, currentX, currentY, pos.x, pos.y, dragData.color, dragData.size, false, dragData.neon);
+                lastX = pos.x; lastY = pos.y; return;
             }
-
             if (!isDrawing) return;
-
-            ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
-            ctx.globalAlpha = isHighlight ? 0.3 : 1.0; 
-
-            drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser, isHighlight);
+            ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over'; ctx.globalAlpha = isHighlight ? 0.3 : 1.0; 
+            drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser, isHighlight, isNeon);
             currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchend', () => {
-            // NEW: Lock the text/stamp in place and tell the server!
             if (isDraggingItem) {
                 isDraggingItem = false;
-                if (dragType === 'text') {
-                    socket.emit('text', { text: dragData.text, x: lastX, y: lastY, color: dragData.color, size: dragData.size });
-                } else {
-                    socket.emit('stamp', { emoji: dragData.emoji, x: lastX, y: lastY, size: dragData.size });
-                }
-                saveState();
-                return;
+                if (dragType === 'text') socket.emit('text', { text: dragData.text, x: lastX, y: lastY, color: dragData.color, size: dragData.size });
+                else if (dragType === 'stamp') socket.emit('stamp', { emoji: dragData.emoji, x: lastX, y: lastY, size: dragData.size });
+                else if (dragType === 'shape') socket.emit('shape', { type: dragData.type, x0: currentX, y0: currentY, x1: lastX, y1: lastY, color: dragData.color, size: dragData.size, neon: dragData.neon });
+                saveState(); return;
             }
-
             if (isDrawing) saveState(); 
-            isDrawing = false;
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 1.0;
+            isDrawing = false; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         });
-
-        // --- Core Drawing Functions ---
-        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight) {
-            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
-            ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.stroke(); ctx.closePath();
-            if (!emit) return;
-            socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight });
+        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon) {
+            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round';
+            applyNeon(color, size, neon); ctx.stroke(); ctx.closePath();
+            if (!emit) return; socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon });
         }
-
         socket.on('drawing', (data) => {
-            ctx.globalCompositeOperation = data.erasing ? 'destination-out' : 'source-over';
-            ctx.globalAlpha = data.highlight ? 0.3 : 1.0;
-            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight);
-            ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0;
+            ctx.globalCompositeOperation = data.erasing ? 'destination-out' : 'source-over'; ctx.globalAlpha = data.highlight ? 0.3 : 1.0;
+            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon);
+            ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         });
+
+        function drawShape(type, x0, y0, x1, y1, color, size, emit, neon) {
+            ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; applyNeon(color, size, neon);
+            if (type === 'rect') { ctx.rect(x0, y0, x1 - x0, y1 - y0); } 
+            else if (type === 'circle') { const radius = Math.hypot(x1 - x0, y1 - y0); ctx.arc(x0, y0, radius, 0, 2 * Math.PI); } 
+            else if (type === 'line') { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); }
+            ctx.stroke(); ctx.closePath();
+            if (emit) socket.emit('shape', { type, x0, y0, x1, y1, color, size, neon });
+        }
+        socket.on('shape', (data) => { drawShape(data.type, data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.neon); ctx.shadowBlur = 0; });
 
         function drawStamp(x, y, emoji, size, emit) {
             ctx.font = `${size}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, x, y);
@@ -238,49 +196,33 @@
         socket.on('text', (data) => drawText(data.text, data.x, data.y, data.color, data.size, false));
 
         socket.on('pointer', (data) => {
-            partnerPointer.style.left = data.x + 'px';
-            partnerPointer.style.top = data.y + 'px';
-            partnerPointer.style.opacity = 1; 
-            clearTimeout(pointerTimeout);
-            pointerTimeout = setTimeout(() => { partnerPointer.style.opacity = 0; }, 1000); 
+            partnerPointer.style.left = data.x + 'px'; partnerPointer.style.top = data.y + 'px'; partnerPointer.style.opacity = 1; 
+            clearTimeout(pointerTimeout); pointerTimeout = setTimeout(() => { partnerPointer.style.opacity = 0; }, 1000); 
         });
 
         function performUndo(emit) {
             if (history.length > 1) {
-                history.pop(); 
-                const previousState = history[history.length - 1]; 
-                const img = new Image();
-                img.src = previousState;
-                img.onload = () => {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0);
-                }
+                history.pop(); const prev = history[history.length - 1]; const img = new Image(); img.src = prev;
+                img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }
                 if (emit) socket.emit('undo');
             }
         }
-        undoBtn.addEventListener('click', () => performUndo(true));
-        socket.on('undo', () => performUndo(false));
+        undoBtn.addEventListener('click', () => performUndo(true)); socket.on('undo', () => performUndo(false));
 
         function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); saveState(); }
-        clearBtn.addEventListener('click', () => { clearCanvas(); socket.emit('clear'); });
-        socket.on('clear', () => { clearCanvas(); });
+        clearBtn.addEventListener('click', () => { clearCanvas(); socket.emit('clear'); }); socket.on('clear', () => { clearCanvas(); });
 
-        // Image loading logic
         imageLoader.addEventListener('change', function(e) {
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
-                    const maxDim = window.innerWidth * 0.8; 
-                    let scale = 1;
+                    const maxDim = window.innerWidth * 0.8; let scale = 1;
                     if (img.width > maxDim || img.height > maxDim) scale = Math.min(maxDim / img.width, maxDim / img.height);
                     const w = img.width * scale, h = img.height * scale;
                     const startX = (canvas.width - w) / 2, startY = (canvas.height - h) / 2;
-                    ctx.drawImage(img, startX, startY, w, h);
-                    saveState();
-
-                    const tempC = document.createElement('canvas');
-                    tempC.width = w; tempC.height = h;
+                    ctx.drawImage(img, startX, startY, w, h); saveState();
+                    const tempC = document.createElement('canvas'); tempC.width = w; tempC.height = h;
                     tempC.getContext('2d').drawImage(img, 0, 0, w, h);
                     socket.emit('image', { imgData: tempC.toDataURL('image/jpeg', 0.6), x: startX, y: startY, w: w, h: h });
                 }
@@ -288,10 +230,25 @@
             }
             if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
         }, false);
-        socket.on('image', (data) => {
-            const img = new Image();
-            img.onload = () => { ctx.drawImage(img, data.x, data.y, data.w, data.h); saveState(); }
-            img.src = data.imgData;
+        socket.on('image', (data) => { const img = new Image(); img.onload = () => { ctx.drawImage(img, data.x, data.y, data.w, data.h); saveState(); }; img.src = data.imgData; });
+
+        function getMergedCanvas() {
+            const temp = document.createElement('canvas'); temp.width = canvas.width; temp.height = canvas.height;
+            const tCtx = temp.getContext('2d');
+            tCtx.fillStyle = document.body.style.backgroundColor || '#ffffff'; tCtx.fillRect(0, 0, temp.width, temp.height);
+            tCtx.drawImage(canvas, 0, 0); return temp;
+        }
+        saveBtn.addEventListener('click', () => {
+            const link = document.createElement('a'); link.download = 'Our-Artwork.png';
+            link.href = getMergedCanvas().toDataURL('image/png'); link.click();
+        });
+
+        pdfBtn.addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? "landscape" : "portrait", unit: "px", format: [canvas.width, canvas.height] });
+            const merged = getMergedCanvas();
+            pdf.addImage(merged.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, canvas.width, canvas.height);
+            pdf.save("Our-Artwork.pdf");
         });
     </script>
 </body>
