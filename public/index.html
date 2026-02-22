@@ -5,159 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Our Premium Canvas 🎨</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #ffffff;
-            font-family: system-ui, -apple-system, sans-serif;
-            transition: background-color 0.3s ease;
-        }
-        canvas {
-            display: block;
-            background-color: transparent; 
-        }
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #ffffff; font-family: system-ui, sans-serif; transition: background-color 0.3s ease; }
+        canvas { display: block; background-color: transparent; }
         
         .toolbar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 12px 20px;
-            border-radius: 40px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            z-index: 10;
-            max-width: 90%;
-            overflow-x: auto;
-            white-space: nowrap;
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);
+            padding: 12px 20px; border-radius: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            display: flex; gap: 15px; align-items: center; z-index: 10; max-width: 90%; overflow-x: auto; white-space: nowrap;
         }
         .toolbar::-webkit-scrollbar { display: none; }
-
-        .tool-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 10px;
-            font-weight: bold;
-            color: #555;
-            gap: 4px;
-        }
-
-        button {
-            padding: 10px;
-            border: none;
-            border-radius: 50%;
-            font-size: 18px;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            background-color: #f0f0f0;
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
-        }
+        .tool-group { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; color: #555; gap: 4px; }
+        
+        button { padding: 10px; border: none; border-radius: 50%; font-size: 18px; width: 45px; height: 45px; cursor: pointer; background-color: #f0f0f0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1); }
         button:active { transform: scale(0.9); }
+        .active-tool { background-color: #333 !important; color: white !important; box-shadow: none; }
         
-        #clearBtn { background-color: #ffeaea; }
-        #saveBtn { background-color: #eaf8ff; }
-        #imageBtn { background-color: #fff0d4; }
-        
-        .active-tool {
-            background-color: #333 !important;
-            color: white !important;
-            box-shadow: none;
-        }
-
-        input[type="color"] {
-            -webkit-appearance: none;
-            border: 2px solid #ddd;
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
-
-        input[type="range"] {
-            width: 80px;
-            accent-color: #333;
-        }
-
-        select {
-            font-size: 20px;
-            border: none;
-            background: transparent;
-            outline: none;
-        }
-
-        /* Hidden file input for uploading images */
+        #clearBtn { background-color: #ffeaea; } #undoBtn { background-color: #fff0d4; }
+        input[type="color"] { -webkit-appearance: none; border: 2px solid #ddd; width: 40px; height: 40px; padding: 0; border-radius: 50%; overflow: hidden; }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; } input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+        input[type="range"] { width: 80px; accent-color: #333; }
+        select { font-size: 20px; border: none; background: transparent; outline: none; }
         #imageLoader { display: none; }
+
+        /* NEW: The Live Pointer */
+        #partnerPointer {
+            position: absolute;
+            font-size: 24px;
+            pointer-events: none; /* So it doesn't block your drawing */
+            transition: opacity 0.3s;
+            opacity: 0; /* Hidden by default */
+            z-index: 5;
+            transform: translate(-50%, -100%); /* Centers the emoji on the finger */
+        }
     </style>
 </head>
 <body>
 
+    <div id="partnerPointer">👆</div>
+
     <div class="toolbar">
-        <div class="tool-group">
-            <span>Pen</span>
-            <input type="color" id="colorPicker" value="#000000">
-        </div>
+        <div class="tool-group"><span>Pen</span><input type="color" id="colorPicker" value="#000000"></div>
+        <div class="tool-group"><span>Size</span><input type="range" id="brushSize" min="1" max="50" value="5"></div>
+        
+        <div class="tool-group"><span>Highlight</span><button id="highlightBtn">🖍️</button></div>
+        
+        <div class="tool-group"><span>Undo</span><button id="undoBtn">↩️</button></div>
 
-        <div class="tool-group">
-            <span>Size</span>
-            <input type="range" id="brushSize" min="1" max="50" value="5">
+        <div class="tool-group"><span>Stamp</span><button id="stampBtn">💖</button></div>
+        <div class="tool-group"><span style="visibility:hidden">Pick</span>
+            <select id="emojiPicker"><option value="❤️">❤️</option><option value="⭐">⭐</option><option value="😂">😂</option></select>
         </div>
-
-        <div class="tool-group">
-            <span>Stamp</span>
-            <button id="stampBtn">💖</button>
-        </div>
-        <div class="tool-group">
-            <span style="visibility:hidden">Pick</span>
-            <select id="emojiPicker">
-                <option value="❤️">❤️</option>
-                <option value="⭐">⭐</option>
-                <option value="🌸">🌸</option>
-                <option value="😂">😂</option>
-                <option value="✨">✨</option>
-            </select>
-        </div>
-
-        <div class="tool-group">
-            <span>Text</span>
-            <button id="textBtn">🔤</button>
-        </div>
-
-        <div class="tool-group">
-            <span>Photo</span>
-            <button id="imageBtn" onclick="document.getElementById('imageLoader').click();">📷</button>
-            <input type="file" id="imageLoader" accept="image/*">
-        </div>
-
-        <div class="tool-group">
-            <span>Eraser</span>
-            <button id="eraserBtn">🧽</button>
-        </div>
-
-        <div class="tool-group">
-            <span>BG</span>
-            <input type="color" id="bgColorPicker" value="#ffffff">
-        </div>
-
-        <div class="tool-group">
-            <span>Clear</span>
-            <button id="clearBtn">🗑️</button>
-        </div>
-
-        <div class="tool-group">
-            <span>Save</span>
-            <button id="saveBtn">💾</button>
-        </div>
+        <div class="tool-group"><span>Text</span><button id="textBtn">🔤</button></div>
+        <div class="tool-group"><span>Photo</span><button id="imageBtn" onclick="document.getElementById('imageLoader').click();">📷</button><input type="file" id="imageLoader" accept="image/*"></div>
+        <div class="tool-group"><span>Eraser</span><button id="eraserBtn">🧽</button></div>
+        <div class="tool-group"><span>Clear</span><button id="clearBtn">🗑️</button></div>
     </div>
 
     <canvas id="drawingBoard"></canvas>
@@ -167,245 +69,156 @@
         const socket = io();
         const canvas = document.getElementById('drawingBoard');
         const ctx = canvas.getContext('2d');
+        const partnerPointer = document.getElementById('partnerPointer');
         
-        // UI Elements
+        // UI
         const colorPicker = document.getElementById('colorPicker');
         const brushSize = document.getElementById('brushSize');
         const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
-        const bgColorPicker = document.getElementById('bgColorPicker');
-        const saveBtn = document.getElementById('saveBtn');
         const stampBtn = document.getElementById('stampBtn');
-        const emojiPicker = document.getElementById('emojiPicker');
-        
-        // NEW UI Elements
         const textBtn = document.getElementById('textBtn');
-        const imageLoader = document.getElementById('imageLoader');
+        const highlightBtn = document.getElementById('highlightBtn');
+        const undoBtn = document.getElementById('undoBtn');
+
+        // NEW: Undo History Array
+        let history = [];
+        const MAX_HISTORY = 10;
+
+        function saveState() {
+            history.push(canvas.toDataURL());
+            if (history.length > MAX_HISTORY) history.shift(); // Keep only last 10 to save memory
+        }
 
         function resizeCanvas() {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
-
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            ctx.drawImage(tempCanvas, 0, 0);
+            saveState(); // Save empty screen state
         }
         window.addEventListener('resize', resizeCanvas);
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        resizeCanvas();
 
-        let isDrawing = false;
-        let currentX = 0;
-        let currentY = 0;
-        
-        // Tool States
-        let isEraser = false; 
-        let isStamping = false; 
-        let isTextMode = false; // NEW
+        let isDrawing = false, currentX = 0, currentY = 0;
+        let isEraser = false, isStamping = false, isTextMode = false, isHighlight = false;
 
-        // --- Tool Toggles ---
         function resetTools() {
-            isEraser = false;
-            isStamping = false;
-            isTextMode = false;
-            eraserBtn.classList.remove('active-tool');
-            stampBtn.classList.remove('active-tool');
-            textBtn.classList.remove('active-tool');
+            isEraser = isStamping = isTextMode = isHighlight = false;
+            eraserBtn.classList.remove('active-tool'); stampBtn.classList.remove('active-tool');
+            textBtn.classList.remove('active-tool'); highlightBtn.classList.remove('active-tool');
         }
 
-        eraserBtn.addEventListener('click', () => {
-            const wasActive = isEraser;
-            resetTools();
-            if (!wasActive) { isEraser = true; eraserBtn.classList.add('active-tool'); }
-        });
-
-        stampBtn.addEventListener('click', () => {
-            const wasActive = isStamping;
-            resetTools();
-            if (!wasActive) { isStamping = true; stampBtn.classList.add('active-tool'); }
-        });
-
-        textBtn.addEventListener('click', () => {
-            const wasActive = isTextMode;
-            resetTools();
-            if (!wasActive) { isTextMode = true; textBtn.classList.add('active-tool'); }
-        });
-
+        eraserBtn.addEventListener('click', () => { resetTools(); isEraser = true; eraserBtn.classList.add('active-tool'); });
+        stampBtn.addEventListener('click', () => { resetTools(); isStamping = true; stampBtn.classList.add('active-tool'); });
+        textBtn.addEventListener('click', () => { resetTools(); isTextMode = true; textBtn.classList.add('active-tool'); });
+        highlightBtn.addEventListener('click', () => { resetTools(); isHighlight = true; highlightBtn.classList.add('active-tool'); });
         colorPicker.addEventListener('change', resetTools);
 
-        // --- Background Color ---
-        function setBackgroundColor(color, emit) {
-            document.body.style.backgroundColor = color;
-            if (emit) socket.emit('bgColor', color);
-        }
-        bgColorPicker.addEventListener('input', (e) => setBackgroundColor(e.target.value, true));
-        socket.on('bgColor', (color) => {
-            bgColorPicker.value = color;
-            setBackgroundColor(color, false);
-        });
-
-        // --- Touch Interactions ---
         function getTouchPos(e) {
             const rect = canvas.getBoundingClientRect();
-            return {
-                x: e.touches[0].clientX - rect.left,
-                y: e.touches[0].clientY - rect.top
-            };
+            return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
         }
+
+        let pointerTimeout;
 
         canvas.addEventListener('touchstart', (e) => {
             if(e.target === canvas) e.preventDefault(); 
             const pos = getTouchPos(e);
+            
+            socket.emit('pointer', {x: pos.x, y: pos.y});
 
-            // Handle Text Mode
             if (isTextMode) {
                 const text = prompt("Type your message:");
-                if (text) {
-                    const size = brushSize.value * 4; // Make text readable
-                    const color = colorPicker.value;
-                    drawText(text, pos.x, pos.y, color, size, true);
-                }
-                return;
+                if (text) drawText(text, pos.x, pos.y, colorPicker.value, brushSize.value * 4, true);
+                saveState(); return;
             }
-
-            // Handle Stamp Mode
             if (isStamping) {
-                const emoji = emojiPicker.value;
-                const size = brushSize.value * 4; 
-                drawStamp(pos.x, pos.y, emoji, size, true);
-                return; 
+                drawStamp(pos.x, pos.y, document.getElementById('emojiPicker').value, brushSize.value * 4, true);
+                saveState(); return; 
             }
-
-            isDrawing = true;
-            currentX = pos.x;
-            currentY = pos.y;
+            isDrawing = true; currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             if(e.target === canvas) e.preventDefault();
+            const pos = getTouchPos(e);
+            
+            // NEW: Broadcast pointer position even if not drawing
+            socket.emit('pointer', {x: pos.x, y: pos.y});
+
             if (!isDrawing || isStamping || isTextMode) return;
 
-            const pos = getTouchPos(e);
             ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
-            drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser);
-            currentX = pos.x;
-            currentY = pos.y;
+            ctx.globalAlpha = isHighlight ? 0.3 : 1.0; // NEW: Make transparent if highlighting
+
+            drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser, isHighlight);
+            currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchend', () => {
+            if (isDrawing) saveState(); // Save after drawing a line
             isDrawing = false;
             ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1.0;
         });
 
-        // --- Drawing Logic ---
-        function drawLine(x0, y0, x1, y1, color, size, emit, erasing) {
-            ctx.beginPath();
-            ctx.moveTo(x0, y0);
-            ctx.lineTo(x1, y1);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = size;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-            ctx.closePath();
-
+        // --- Core Drawing Functions ---
+        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight) {
+            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+            ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.stroke(); ctx.closePath();
             if (!emit) return;
-            socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing });
+            socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight });
         }
 
         socket.on('drawing', (data) => {
             ctx.globalCompositeOperation = data.erasing ? 'destination-out' : 'source-over';
-            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing);
-            ctx.globalCompositeOperation = 'source-over'; 
+            ctx.globalAlpha = data.highlight ? 0.3 : 1.0;
+            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight);
+            ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0;
         });
 
         function drawStamp(x, y, emoji, size, emit) {
-            ctx.font = `${size}px Arial`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = "black"; // Emojis handle their own color, but fallback
-            ctx.fillText(emoji, x, y);
-
-            if (!emit) return;
-            socket.emit('stamp', { x, y, emoji, size });
+            ctx.font = `${size}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, x, y);
+            if (emit) socket.emit('stamp', { x, y, emoji, size });
         }
+        socket.on('stamp', (data) => drawStamp(data.x, data.y, data.emoji, data.size, false));
 
-        socket.on('stamp', (data) => { drawStamp(data.x, data.y, data.emoji, data.size, false); });
-
-        // NEW: Draw Text Logic
         function drawText(text, x, y, color, size, emit) {
-            ctx.font = `bold ${size}px system-ui`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = color;
-            ctx.fillText(text, x, y);
-
-            if (!emit) return;
-            socket.emit('text', { text, x, y, color, size });
+            ctx.font = `bold ${size}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color; ctx.fillText(text, x, y);
+            if (emit) socket.emit('text', { text, x, y, color, size });
         }
+        socket.on('text', (data) => drawText(data.text, data.x, data.y, data.color, data.size, false));
 
-        socket.on('text', (data) => { drawText(data.text, data.x, data.y, data.color, data.size, false); });
-
-        // NEW: Image Upload Logic
-        imageLoader.addEventListener('change', function(e) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    // Compress and scale the image to fit mobile screens
-                    const maxDim = window.innerWidth * 0.8; // 80% of screen width
-                    let scale = 1;
-                    if (img.width > maxDim || img.height > maxDim) {
-                        scale = Math.min(maxDim / img.width, maxDim / img.height);
-                    }
-                    const w = img.width * scale;
-                    const h = img.height * scale;
-
-                    // Center it on the screen
-                    const startX = (canvas.width - w) / 2;
-                    const startY = (canvas.height - h) / 2;
-                    
-                    ctx.drawImage(img, startX, startY, w, h);
-
-                    // Compress to JPEG for WebSocket sending
-                    const tempC = document.createElement('canvas');
-                    tempC.width = w; tempC.height = h;
-                    tempC.getContext('2d').drawImage(img, 0, 0, w, h);
-                    const compressedData = tempC.toDataURL('image/jpeg', 0.6);
-
-                    socket.emit('image', { imgData: compressedData, x: startX, y: startY, w: w, h: h });
-                }
-                img.src = event.target.result;
-            }
-            if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]);
-        }, false);
-
-        socket.on('image', (data) => {
-            const img = new Image();
-            img.onload = () => ctx.drawImage(img, data.x, data.y, data.w, data.h);
-            img.src = data.imgData;
+        // --- NEW: Live Pointer Logic ---
+        socket.on('pointer', (data) => {
+            partnerPointer.style.left = data.x + 'px';
+            partnerPointer.style.top = data.y + 'px';
+            partnerPointer.style.opacity = 1; // Show it
+            
+            clearTimeout(pointerTimeout);
+            pointerTimeout = setTimeout(() => { partnerPointer.style.opacity = 0; }, 1000); // Hide after 1 sec of no movement
         });
 
-        // --- Action Buttons ---
-        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+        // --- NEW: Undo Logic ---
+        function performUndo(emit) {
+            if (history.length > 1) {
+                history.pop(); // Remove current state
+                const previousState = history[history.length - 1]; // Get last state
+                const img = new Image();
+                img.src = previousState;
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                }
+                if (emit) socket.emit('undo');
+            }
+        }
+        undoBtn.addEventListener('click', () => performUndo(true));
+        socket.on('undo', () => performUndo(false));
+
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); saveState(); }
         clearBtn.addEventListener('click', () => { clearCanvas(); socket.emit('clear'); });
         socket.on('clear', () => { clearCanvas(); });
 
-        saveBtn.addEventListener('click', () => {
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
-            tempCtx.fillStyle = document.body.style.backgroundColor || '#ffffff';
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            tempCtx.drawImage(canvas, 0, 0);
-
-            const link = document.createElement('a');
-            link.download = 'Our-Artwork.png';
-            link.href = tempCanvas.toDataURL('image/png');
-            link.click();
-        });
     </script>
 </body>
 </html>
