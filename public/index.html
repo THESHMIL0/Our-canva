@@ -3,78 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Our Drawing Canvas 😁</title>
+    <title>Our Premium Canvas 🎨</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #f0f0f0;
-            font-family: sans-serif;
+            background-color: #ffffff; /* Default background */
+            font-family: system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s ease; /* Smooth background transition */
         }
         canvas {
             display: block;
-            background-color: white;
+            /* Canvas is transparent so the body background color shows through */
+            background-color: transparent; 
         }
-        /* Updated Toolbar for mobile fitting */
+        
+        /* ✨ PREMIUM TOOLBAR DESIGN ✨ */
         .toolbar {
             position: absolute;
-            top: 10px;
+            bottom: 20px; /* Moved to bottom for easier thumb access on mobile */
             left: 50%;
             transform: translateX(-50%);
-            background: white;
-            padding: 10px 15px;
-            border-radius: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.85); /* Glass effect */
+            backdrop-filter: blur(10px); /* Blurs what is behind the toolbar */
+            padding: 12px 20px;
+            border-radius: 40px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
             display: flex;
-            gap: 10px;
+            gap: 15px;
             align-items: center;
             z-index: 10;
-            width: 90%; /* Keeps it from going off-screen on phones */
-            max-width: 400px;
-            justify-content: space-between;
+            max-width: 90%;
+            overflow-x: auto; /* Lets you swipe through tools if they don't fit */
+            white-space: nowrap;
         }
-        button {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 15px;
+        /* Hide scrollbar for a cleaner look */
+        .toolbar::-webkit-scrollbar { display: none; }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 10px;
             font-weight: bold;
+            color: #555;
+            gap: 4px;
+        }
+
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 50%;
+            font-size: 18px;
+            width: 45px;
+            height: 45px;
             cursor: pointer;
+            background-color: #f0f0f0;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
         }
-        #clearBtn {
-            background-color: #ff4d4d;
-            color: white;
+        button:active {
+            transform: scale(0.9); /* Satisfying click effect */
         }
-        #eraserBtn {
-            background-color: #e0e0e0;
-            color: #333;
-        }
-        /* Style when eraser is active */
+        #clearBtn { background-color: #ffeaea; }
+        #saveBtn { background-color: #eaf8ff; }
+        
         #eraserBtn.active {
             background-color: #333;
             color: white;
+            box-shadow: none;
         }
+
+        /* Styling the color inputs to look like premium circles */
         input[type="color"] {
-            border: none;
-            width: 35px;
-            height: 35px;
+            -webkit-appearance: none;
+            border: 2px solid #ddd;
+            width: 40px;
+            height: 40px;
             padding: 0;
             border-radius: 50%;
             overflow: hidden;
+            cursor: pointer;
         }
-        /* Brush size slider */
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+
         input[type="range"] {
             width: 80px;
+            accent-color: #333; /* Dark slider */
         }
     </style>
 </head>
 <body>
 
     <div class="toolbar">
-        <input type="color" id="colorPicker" value="#000000">
-        <input type="range" id="brushSize" min="1" max="20" value="4">
-        <button id="eraserBtn">Eraser</button>
-        <button id="clearBtn">Clear</button>
+        <div class="tool-group">
+            <span>Pen</span>
+            <input type="color" id="colorPicker" value="#000000">
+        </div>
+
+        <div class="tool-group">
+            <span>Size</span>
+            <input type="range" id="brushSize" min="1" max="30" value="5">
+        </div>
+
+        <div class="tool-group">
+            <span>Eraser</span>
+            <button id="eraserBtn">🧽</button>
+        </div>
+
+        <div class="tool-group">
+            <span>BG Color</span>
+            <input type="color" id="bgColorPicker" value="#ffffff">
+        </div>
+
+        <div class="tool-group">
+            <span>Clear</span>
+            <button id="clearBtn">🗑️</button>
+        </div>
+
+        <div class="tool-group">
+            <span>Save</span>
+            <button id="saveBtn">💾</button>
+        </div>
     </div>
 
     <canvas id="drawingBoard"></canvas>
@@ -90,30 +142,59 @@
         const brushSize = document.getElementById('brushSize');
         const eraserBtn = document.getElementById('eraserBtn');
         const clearBtn = document.getElementById('clearBtn');
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        const saveBtn = document.getElementById('saveBtn');
 
         function resizeCanvas() {
+            // Save current drawing
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            tempCanvas.getContext('2d').drawImage(canvas, 0, 0);
+
+            // Resize
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+
+            // Restore drawing
+            ctx.drawImage(tempCanvas, 0, 0);
         }
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        // Initialize exact size immediately
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
         let isDrawing = false;
         let currentX = 0;
         let currentY = 0;
-        let isEraser = false; // Tracks if we are erasing
+        let isEraser = false; 
 
-        // Toggle Eraser On and Off
+        // Eraser Toggle
         eraserBtn.addEventListener('click', () => {
             isEraser = !isEraser;
-            // Add a visual cue to the button so you know it's on
             eraserBtn.classList.toggle('active', isEraser);
         });
 
-        // If you pick a new color, automatically turn the eraser off
         colorPicker.addEventListener('change', () => {
             isEraser = false;
             eraserBtn.classList.remove('active');
+        });
+
+        // NEW: Background Color Logic
+        function setBackgroundColor(color, emit) {
+            document.body.style.backgroundColor = color;
+            if (emit) {
+                socket.emit('bgColor', color);
+            }
+        }
+
+        bgColorPicker.addEventListener('input', (e) => {
+            setBackgroundColor(e.target.value, true);
+        });
+
+        socket.on('bgColor', (color) => {
+            bgColorPicker.value = color;
+            setBackgroundColor(color, false);
         });
 
         function getTouchPos(e) {
@@ -138,12 +219,10 @@
 
             const pos = getTouchPos(e);
             
-            // NEW: Determine color and size
-            const selectedColor = isEraser ? '#ffffff' : colorPicker.value;
-            const selectedSize = brushSize.value;
-
-            // Pass the size to our draw function
-            drawLine(currentX, currentY, pos.x, pos.y, selectedColor, selectedSize, true);
+            // If erasing, we actually just use the 'destination-out' trick for a true transparent erase!
+            ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+            
+            drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser);
             
             currentX = pos.x;
             currentY = pos.y;
@@ -151,28 +230,28 @@
 
         canvas.addEventListener('touchend', () => {
             isDrawing = false;
+            // Reset composite operation just in case
+            ctx.globalCompositeOperation = 'source-over';
         });
 
-        // NEW: drawLine now accepts a 'size' parameter
-        function drawLine(x0, y0, x1, y1, color, size, emit) {
+        function drawLine(x0, y0, x1, y1, color, size, emit, erasing) {
             ctx.beginPath();
             ctx.moveTo(x0, y0);
             ctx.lineTo(x1, y1);
             ctx.strokeStyle = color;
-            ctx.lineWidth = size; // Uses the slider value
+            ctx.lineWidth = size;
             ctx.lineCap = 'round';
             ctx.stroke();
             ctx.closePath();
 
-            // Send the coordinates, color, AND size to the server
             if (!emit) return;
-            socket.emit('drawing', { x0, y0, x1, y1, color, size });
+            socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing });
         }
 
-        // Listen for drawing data from your girlfriend
         socket.on('drawing', (data) => {
-            // Use the data.size she sent so her line thickness matches on your screen
-            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false);
+            ctx.globalCompositeOperation = data.erasing ? 'destination-out' : 'source-over';
+            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing);
+            ctx.globalCompositeOperation = 'source-over'; // reset
         });
 
         function clearCanvas() {
@@ -186,6 +265,28 @@
 
         socket.on('clear', () => {
             clearCanvas();
+        });
+
+        // NEW: Save Image Function
+        saveBtn.addEventListener('click', () => {
+            // Create a temporary canvas to merge the background color and the drawing
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+
+            // Fill with the chosen background color
+            tempCtx.fillStyle = document.body.style.backgroundColor || '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+            // Draw our actual transparent canvas on top
+            tempCtx.drawImage(canvas, 0, 0);
+
+            // Trigger the download
+            const link = document.createElement('a');
+            link.download = 'Our-Artwork.png';
+            link.href = tempCanvas.toDataURL('image/png');
+            link.click();
         });
     </script>
 </body>
