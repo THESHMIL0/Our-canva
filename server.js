@@ -12,42 +12,21 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('A new artist connected:', socket.id);
 
-    // Broadcast drawing lines
-    socket.on('drawing', (data) => {
-        socket.broadcast.emit('drawing', data);
-    });
+    socket.on('drawing', (data) => socket.broadcast.emit('drawing', data));
+    socket.on('stamp', (data) => socket.broadcast.emit('stamp', data));
+    socket.on('image', (data) => socket.broadcast.emit('image', data));
+    socket.on('text', (data) => socket.broadcast.emit('text', data));
+    socket.on('clear', () => socket.broadcast.emit('clear'));
+    socket.on('bgColor', (color) => socket.broadcast.emit('bgColor', color));
 
-    // Broadcast emoji stamps
-    socket.on('stamp', (data) => {
-        socket.broadcast.emit('stamp', data);
-    });
+    // NEW: Broadcast live pointer movements
+    socket.on('pointer', (data) => socket.broadcast.emit('pointer', data));
+    
+    // NEW: Broadcast the undo command
+    socket.on('undo', (data) => socket.broadcast.emit('undo', data));
 
-    // NEW: Broadcast images/photos
-    socket.on('image', (data) => {
-        socket.broadcast.emit('image', data);
-    });
-
-    // NEW: Broadcast typed text
-    socket.on('text', (data) => {
-        socket.broadcast.emit('text', data);
-    });
-
-    // Broadcast the clear command
-    socket.on('clear', () => {
-        socket.broadcast.emit('clear');
-    });
-
-    // Broadcast background color changes
-    socket.on('bgColor', (color) => {
-        socket.broadcast.emit('bgColor', color);
-    });
-
-    socket.on('disconnect', () => {
-        console.log('An artist disconnected:', socket.id);
-    });
+    socket.on('disconnect', () => console.log('An artist disconnected:', socket.id));
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
