@@ -8,7 +8,15 @@
     <meta name="theme-color" content="#ffffff">
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #ffffff; font-family: system-ui, sans-serif; transition: background-color 0.3s ease; }
-        canvas { display: block; background-color: transparent; }
+        
+        /* NEW: Notebook Background Patterns */
+        body.bg-lined { background-image: repeating-linear-gradient(transparent, transparent 29px, #ccc 29px, #ccc 30px); }
+        body.bg-grid { background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px); background-size: 30px 30px; }
+        body.bg-dots { background-image: radial-gradient(#ccc 2px, transparent 2px); background-size: 30px 30px; }
+
+        canvas { display: block; background-color: transparent; position: absolute; top:0; left:0; }
+        /* NEW: Laser Canvas layer */
+        #laserBoard { pointer-events: none; z-index: 2; }
         
         .top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 20px; z-index: 10; }
         .bottom-bar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); display: flex; gap: 15px; align-items: center; z-index: 10; max-width: 90%; overflow-x: auto; white-space: nowrap; }
@@ -21,7 +29,7 @@
         
         .settings-modal { display: none; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); padding: 20px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 20; flex-direction: column; gap: 15px; min-width: 200px; }
         .settings-modal.show { display: flex; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #333; font-size: 14px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #333; font-size: 14px; gap: 10px; }
         .setting-row button { border-radius: 10px; width: auto; height: auto; padding: 8px 15px; font-size: 14px; background: #eee; }
         .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .template-btn { width: 100%; height: 60px; border-radius: 10px; border: 2px solid #ddd; background: white; font-size: 24px; display: flex; align-items: center; justify-content: center; }
@@ -29,13 +37,14 @@
         input[type="color"] { -webkit-appearance: none; border: 2px solid #ddd; width: 40px; height: 40px; padding: 0; border-radius: 50%; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; } input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
         input[type="range"] { width: 80px; accent-color: #333; }
-        select { font-size: 18px; border: none; background: transparent; outline: none; }
+        select { font-size: 14px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; background: white; outline: none; }
+        #shapePicker, #emojiPicker { font-size: 18px; border: none; background: transparent; padding:0; }
         #imageLoader { display: none; }
         #textInput { border: 2px solid #ddd; border-radius: 15px; padding: 5px 10px; width: 90px; font-size: 14px; outline: none; }
         #partnerPointer { position: absolute; font-size: 24px; pointer-events: none; transition: opacity 0.3s; opacity: 0; z-index: 5; transform: translate(-50%, -100%); }
 
-        body.dark-ui .top-bar, body.dark-ui .bottom-bar, body.dark-ui .settings-modal { background: rgba(30, 30, 30, 0.9); color: #fff; }
-        body.dark-ui .tool-group, body.dark-ui .setting-row { color: #ccc; }
+        body.dark-ui .top-bar, body.dark-ui .bottom-bar, body.dark-ui .settings-modal, body.dark-ui #chatBox { background: rgba(30, 30, 30, 0.9); color: #fff; }
+        body.dark-ui .tool-group, body.dark-ui .setting-row, body.dark-ui #chatMessages { color: #ccc; }
         body.dark-ui button { background-color: #444; color: #fff; }
         body.dark-ui .active-tool { background-color: #4facfe !important; }
         body.dark-ui select, body.dark-ui input[type="text"] { color: white; background: #333; border-color: #555; }
@@ -45,22 +54,22 @@
         .login-field { padding: 15px; font-size: 16px; border-radius: 20px; border: 2px solid #ff4d85; outline: none; text-align: center; margin-bottom: 15px; width: 250px; }
         #loginBtn { border-radius: 20px; width: 150px; background: #ff4d85; color: white; font-weight: bold; }
 
-        /* NEW: Rednote Livestream Chat UI */
         #liveChatContainer { position: absolute; bottom: 90px; left: 10px; width: 250px; height: 300px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 12; pointer-events: none; }
         #liveChatMessages { display: flex; flex-direction: column; gap: 5px; overflow-y: hidden; margin-bottom: 10px; align-items: flex-start; }
         .live-msg { background: rgba(0, 0, 0, 0.4); color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; word-wrap: break-word; max-width: 100%; animation: slideIn 0.3s ease-out; text-shadow: 0 1px 2px rgba(0,0,0,0.5); transition: opacity 1s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fade-out { opacity: 0; }
-        
         #liveChatInputArea { pointer-events: auto; display: flex; gap: 5px; background: rgba(255,255,255,0.3); backdrop-filter: blur(5px); padding: 5px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); }
         #liveChatInput { flex: 1; background: transparent; border: none; outline: none; color: #333; padding: 5px 10px; font-weight: bold; }
         body.dark-ui #liveChatInput { color: white; }
-        #liveChatInput::placeholder { color: #666; }
-        body.dark-ui #liveChatInput::placeholder { color: #ccc; }
         #liveSendBtn { background: #ff4d85; color: white; border-radius: 15px; padding: 5px 15px; font-size: 12px; width: auto; height: auto; }
 
         #stickyContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
         .sticky-note { position: absolute; padding: 15px; background: #fffde7; box-shadow: 2px 5px 10px rgba(0,0,0,0.2); border-radius: 5px; font-family: 'Comic Sans MS', cursive, sans-serif; font-size: 16px; color: #333; pointer-events: auto; transform: rotate(-2deg); min-width: 80px; text-align: center; }
+
+        /* NEW: Love Bomb Confetti Animation */
+        .love-heart { position: absolute; font-size: 35px; pointer-events: none; z-index: 999; animation: fall 3s linear forwards; }
+        @keyframes fall { 0% { transform: translateY(-50px) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg) scale(1.5); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -78,11 +87,13 @@
 
     <div class="top-bar">
         <div class="tool-group"><span>Menu</span><button id="menuBtn">⚙️</button></div>
+        <div class="tool-group"><span>Chat</span><button id="chatToggleBtn">💬</button></div>
+        <div class="tool-group"><span>Love</span><button id="loveBombBtn" style="background:#ffc0cb;">💝</button></div>
         <div class="tool-group"><span>Undo</span><button id="undoBtn">↩️</button></div>
         <div class="tool-group"><span>Clear</span><button id="clearBtn">🗑️</button></div>
     </div>
 
-    <div id="liveChatContainer">
+    <div id="liveChatContainer" style="display:none;">
         <div id="liveChatMessages"></div>
         <div id="liveChatInputArea">
             <input type="text" id="liveChatInput" placeholder="Say something..." autocomplete="off">
@@ -102,15 +113,27 @@
         </div>
         <hr style="width:100%; border:0; border-top:1px solid #ddd; margin:10px 0;">
         <div class="setting-row"><span>Dark UI</span><button id="darkModeBtn">🌙 Toggle</button></div>
-        <div class="setting-row"><span>Background</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
-        <div class="setting-row"><span>Export PNG</span><button id="saveBtn">💾 Save</button></div>
-        <div class="setting-row"><span>Export PDF</span><button id="pdfBtn">📄 Save</button></div>
-        <div class="setting-row"><button id="installBtn" style="display:none;">📲 Install App</button></div>
+        
+        <div class="setting-row"><span>Paper</span>
+            <select id="bgPatternPicker">
+                <option value="solid">Solid</option>
+                <option value="bg-lined">Lined</option>
+                <option value="bg-grid">Grid</option>
+                <option value="bg-dots">Dots</option>
+            </select>
+        </div>
+        
+        <div class="setting-row"><span>Color</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
+        <div class="setting-row"><span>Save PNG</span><button id="saveBtn">💾 Save</button></div>
+        <div class="setting-row"><span>Save PDF</span><button id="pdfBtn">📄 Save</button></div>
     </div>
 
     <div class="bottom-bar">
         <div class="tool-group"><span>Pen</span><input type="color" id="colorPicker" value="#000000"></div>
         <div class="tool-group"><span>Size</span><input type="range" id="brushSize" min="1" max="50" value="5"></div>
+        
+        <div class="tool-group"><span>Laser</span><button id="laserBtn" style="background:#ffcdd2;">☄️</button></div>
+        
         <div class="tool-group"><span>Mirror</span><button id="mirrorBtn" style="background:#e0f7fa;">🦋</button></div>
         <div class="tool-group"><span>Note</span><button id="stickyBtn" style="background:#fff9c4;">📌</button></div>
         <div class="tool-group"><span>Fill</span><button id="fillBtn" style="background:#d4f1ff;">🪣</button></div>
@@ -123,98 +146,84 @@
         <div class="tool-group"><span style="visibility:hidden">Pick</span><select id="emojiPicker"><option value="❤️">❤️</option><option value="⭐">⭐</option><option value="😂">😂</option><option value="🔥">🔥</option></select></div>
         <div class="tool-group"><span>Text</span><button id="textBtn">🔤</button></div>
         <div class="tool-group"><span>Type</span><input type="text" id="textInput" placeholder="Hello!"></div>
+        
         <div class="tool-group"><span>Photo</span><button id="imageBtn" onclick="document.getElementById('imageLoader').click();">📷</button><input type="file" id="imageLoader" accept="image/*"></div>
         <div class="tool-group"><span>Eraser</span><button id="eraserBtn">🧽</button></div>
     </div>
 
     <canvas id="drawingBoard"></canvas>
+    <canvas id="laserBoard"></canvas>
+    
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        const socket = io();
-        let myName = "Artist";
-        
-        const loginScreen = document.getElementById('loginScreen');
-        const usernameInput = document.getElementById('usernameInput');
-        const loginInput = document.getElementById('loginInput');
-        const loginBtn = document.getElementById('loginBtn');
-
-        loginBtn.addEventListener('click', () => {
-            if (loginInput.value.toLowerCase() === 'kushu') {
-                myName = usernameInput.value.trim() || "Artist";
-                loginScreen.style.display = 'none';
+        const socket = io(); let myName = "Artist";
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            if (document.getElementById('loginInput').value.toLowerCase() === 'kushu') {
+                myName = document.getElementById('usernameInput').value.trim() || "Artist";
+                document.getElementById('loginScreen').style.display = 'none';
                 socket.emit('joinRoom', { roomCode: 'kushu', username: myName });
-            } else {
-                alert("Wrong password! Hint: it's kushu 😸");
-            }
+            } else alert("Wrong password! Hint: it's kushu 😸");
         });
 
-        // --- NEW: Rednote Livestream Chat Engine ---
-        const liveChatMessages = document.getElementById('liveChatMessages');
-        const liveChatInput = document.getElementById('liveChatInput');
-        const liveSendBtn = document.getElementById('liveSendBtn');
-
+        const liveChatContainer = document.getElementById('liveChatContainer');
+        document.getElementById('chatToggleBtn').addEventListener('click', () => liveChatContainer.style.display = liveChatContainer.style.display === 'none' ? 'flex' : 'none');
         function addLiveMessage(text, sender) {
-            const msgEl = document.createElement('div');
-            msgEl.className = 'live-msg';
-            msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`;
-            liveChatMessages.appendChild(msgEl);
-            liveChatMessages.scrollTop = liveChatMessages.scrollHeight;
-            
-            // Magic fade out after 7 seconds!
-            setTimeout(() => {
-                msgEl.classList.add('fade-out');
-                setTimeout(() => msgEl.remove(), 1000); // Remove from HTML after fade
-            }, 7000);
+            const msgEl = document.createElement('div'); msgEl.className = 'live-msg'; msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            document.getElementById('liveChatMessages').appendChild(msgEl); document.getElementById('liveChatMessages').scrollTop = document.getElementById('liveChatMessages').scrollHeight;
+            setTimeout(() => { msgEl.classList.add('fade-out'); setTimeout(() => msgEl.remove(), 1000); }, 7000);
         }
-
-        liveSendBtn.addEventListener('click', () => {
-            const text = liveChatInput.value.trim();
-            if (text) {
-                addLiveMessage(text, myName); // Show on my screen
-                socket.emit('chatMessage', { text: text }); // Send to partner
-                liveChatInput.value = '';
-            }
-        });
+        document.getElementById('liveSendBtn').addEventListener('click', () => { const text = document.getElementById('liveChatInput').value.trim(); if (text) { addLiveMessage(text, myName); socket.emit('chatMessage', { text: text }); document.getElementById('liveChatInput').value = ''; } });
         socket.on('chatMessage', (data) => addLiveMessage(data.text, data.sender));
 
-        // Sticky Notes
-        function createSticky(id, text, x, y, emit) {
-            const note = document.createElement('div');
-            note.id = id; note.className = 'sticky-note'; note.innerText = text;
-            note.style.left = x + 'px'; note.style.top = y + 'px';
-            document.getElementById('stickyContainer').appendChild(note);
-
-            let isDraggingNote = false, offsetX, offsetY;
-            note.addEventListener('touchstart', (e) => {
-                isDraggingNote = true; const touch = e.touches[0];
-                offsetX = touch.clientX - note.offsetLeft; offsetY = touch.clientY - note.offsetTop;
-            }, {passive: false});
-            note.addEventListener('touchmove', (e) => {
-                if(!isDraggingNote) return; e.preventDefault(); const touch = e.touches[0];
-                const nx = touch.clientX - offsetX, ny = touch.clientY - offsetY;
-                note.style.left = nx + 'px'; note.style.top = ny + 'px';
-                socket.emit('stickyMove', {id, x: nx, y: ny});
-            }, {passive: false});
-            note.addEventListener('touchend', () => isDraggingNote = false);
-            if(emit) socket.emit('stickyAdd', {id, text, x, y});
+        // NEW: Love Bomb Animation!
+        function triggerLoveBomb(emit) {
+            const emojis = ['💖', '✨', '🌸', '💝', '🎉'];
+            for(let i=0; i<40; i++) {
+                const heart = document.createElement('div'); heart.className = 'love-heart';
+                heart.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                heart.style.left = Math.random() * 100 + 'vw';
+                heart.style.animationDuration = (Math.random() * 2 + 2) + 's'; // random speed
+                document.body.appendChild(heart);
+                setTimeout(() => heart.remove(), 4000); // cleanup
+            }
+            if(emit) socket.emit('loveBomb');
         }
-        socket.on('stickyAdd', (data) => createSticky(data.id, data.text, data.x, data.y, false));
-        socket.on('stickyMove', (data) => {
-            const note = document.getElementById(data.id);
-            if(note) { note.style.left = data.x + 'px'; note.style.top = data.y + 'px'; }
-        });
+        document.getElementById('loveBombBtn').addEventListener('click', () => triggerLoveBomb(true));
+        socket.on('loveBomb', () => triggerLoveBomb(false));
 
-        // Tool Setup
+        // NEW: Notebook Pattern Backgrounds
+        document.getElementById('bgPatternPicker').addEventListener('change', (e) => {
+            const val = e.target.value;
+            document.body.className = ''; if(val !== 'solid') document.body.classList.add(val);
+            socket.emit('bgPattern', val);
+        });
+        socket.on('bgPattern', (val) => { document.body.className = ''; if(val !== 'solid') document.body.classList.add(val); document.getElementById('bgPatternPicker').value = val; });
+
+        // Base Canvas Setup
         const canvas = document.getElementById('drawingBoard'); const ctx = canvas.getContext('2d');
+        const laserBoard = document.getElementById('laserBoard'); const ctxLaser = laserBoard.getContext('2d');
         const partnerPointer = document.getElementById('partnerPointer');
         let history = []; const MAX_HISTORY = 10;
+        
         function saveState() { history.push(canvas.toDataURL()); if (history.length > MAX_HISTORY) history.shift(); }
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; saveState(); }
+        function resizeCanvas() { 
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight; 
+            laserBoard.width = window.innerWidth; laserBoard.height = window.innerHeight; 
+            saveState(); 
+        }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
+        // NEW: The Laser Pen Fading Engine (Clears the laser canvas slowly every 50ms)
+        setInterval(() => {
+            ctxLaser.fillStyle = "rgba(0,0,0,0.1)"; // Slight transparency
+            ctxLaser.globalCompositeOperation = "destination-out";
+            ctxLaser.fillRect(0, 0, laserBoard.width, laserBoard.height);
+            ctxLaser.globalCompositeOperation = "source-over";
+        }, 50);
+
         let isDrawing = false, currentX = 0, currentY = 0;
-        let isEraser = false, isStamping = false, isTextMode = false, isHighlight = false, isNeon = false, isShapeMode = false, isFillMode = false, isMagicMode = false, isMirrorMode = false, isStickyMode = false;
+        let isEraser = false, isStamping = false, isTextMode = false, isHighlight = false, isNeon = false, isShapeMode = false, isFillMode = false, isMagicMode = false, isMirrorMode = false, isStickyMode = false, isLaserMode = false;
         const colorPicker = document.getElementById('colorPicker'); const brushSize = document.getElementById('brushSize');
         const eraserBtn = document.getElementById('eraserBtn'); const stampBtn = document.getElementById('stampBtn'); 
         const textBtn = document.getElementById('textBtn'); const highlightBtn = document.getElementById('highlightBtn'); 
@@ -222,10 +231,11 @@
         const shapeBtn = document.getElementById('shapeBtn'); const shapePicker = document.getElementById('shapePicker');
         const fillBtn = document.getElementById('fillBtn'); const magicBtn = document.getElementById('magicBtn');
         const mirrorBtn = document.getElementById('mirrorBtn'); const stickyBtn = document.getElementById('stickyBtn');
+        const laserBtn = document.getElementById('laserBtn'); // NEW
 
         function resetTools() {
-            isEraser = isStamping = isTextMode = isHighlight = isNeon = isShapeMode = isFillMode = isMagicMode = isMirrorMode = isStickyMode = false;
-            [eraserBtn, stampBtn, textBtn, highlightBtn, neonBtn, shapeBtn, fillBtn, magicBtn, mirrorBtn, stickyBtn].forEach(btn => btn.classList.remove('active-tool'));
+            isEraser = isStamping = isTextMode = isHighlight = isNeon = isShapeMode = isFillMode = isMagicMode = isMirrorMode = isStickyMode = isLaserMode = false;
+            [eraserBtn, stampBtn, textBtn, highlightBtn, neonBtn, shapeBtn, fillBtn, magicBtn, mirrorBtn, stickyBtn, laserBtn].forEach(btn => btn.classList.remove('active-tool'));
         }
 
         eraserBtn.addEventListener('click', () => { resetTools(); isEraser = true; eraserBtn.classList.add('active-tool'); });
@@ -238,16 +248,27 @@
         magicBtn.addEventListener('click', () => { resetTools(); isMagicMode = true; magicBtn.classList.add('active-tool'); });
         mirrorBtn.addEventListener('click', () => { resetTools(); isMirrorMode = true; mirrorBtn.classList.add('active-tool'); });
         stickyBtn.addEventListener('click', () => { resetTools(); isStickyMode = true; stickyBtn.classList.add('active-tool'); });
+        laserBtn.addEventListener('click', () => { resetTools(); isLaserMode = true; laserBtn.classList.add('active-tool'); }); // NEW
 
         function getTouchPos(e) { const rect = canvas.getBoundingClientRect(); return { x: Math.floor(e.touches[0].clientX - rect.left), y: Math.floor(e.touches[0].clientY - rect.top) }; }
         let pointerTimeout; let isDraggingItem = false, dragType = '', dragData = {}, savedImageData = null, lastX = 0, lastY = 0;
-        function applyNeon(color, size, active) { if (active) { ctx.shadowBlur = size * 2; ctx.shadowColor = color; } else { ctx.shadowBlur = 0; } }
+        
+        // Sticky Notes
+        function createSticky(id, text, x, y, emit) {
+            const note = document.createElement('div'); note.id = id; note.className = 'sticky-note'; note.innerText = text; note.style.left = x + 'px'; note.style.top = y + 'px'; document.getElementById('stickyContainer').appendChild(note);
+            let isDraggingNote = false, offsetX, offsetY;
+            note.addEventListener('touchstart', (e) => { isDraggingNote = true; const touch = e.touches[0]; offsetX = touch.clientX - note.offsetLeft; offsetY = touch.clientY - note.offsetTop; }, {passive: false});
+            note.addEventListener('touchmove', (e) => { if(!isDraggingNote) return; e.preventDefault(); const touch = e.touches[0]; const nx = touch.clientX - offsetX, ny = touch.clientY - offsetY; note.style.left = nx + 'px'; note.style.top = ny + 'px'; socket.emit('stickyMove', {id, x: nx, y: ny}); }, {passive: false});
+            note.addEventListener('touchend', () => isDraggingNote = false);
+            if(emit) socket.emit('stickyAdd', {id, text, x, y});
+        }
+        socket.on('stickyAdd', (data) => createSticky(data.id, data.text, data.x, data.y, false)); socket.on('stickyMove', (data) => { const note = document.getElementById(data.id); if(note) { note.style.left = data.x + 'px'; note.style.top = data.y + 'px'; } });
 
+        // Paint Bucket
         function hexToRgba(hex) { let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return [r, g, b, 255]; }
         function floodFill(startX, startY, fillColorHex, emit) {
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height); const data = imgData.data; const w = canvas.width; const h = canvas.height;
-            const startPos = (startY * w + startX) * 4; const startR = data[startPos], startG = data[startPos + 1], startB = data[startPos + 2], startA = data[startPos + 3];
-            const fillRgba = hexToRgba(fillColorHex);
+            const startPos = (startY * w + startX) * 4; const startR = data[startPos], startG = data[startPos + 1], startB = data[startPos + 2], startA = data[startPos + 3]; const fillRgba = hexToRgba(fillColorHex);
             if (startR === fillRgba[0] && startG === fillRgba[1] && startB === fillRgba[2] && startA === fillRgba[3]) return;
             const matchColor = (pos) => data[pos] === startR && data[pos+1] === startG && data[pos+2] === startB && data[pos+3] === startA;
             const colorPixel = (pos) => { data[pos] = fillRgba[0]; data[pos+1] = fillRgba[1]; data[pos+2] = fillRgba[2]; data[pos+3] = fillRgba[3]; };
@@ -256,12 +277,7 @@
                 let [x, y] = stack.pop(); let pos = (y * w + x) * 4;
                 while (y >= 0 && matchColor(pos)) { y--; pos -= w * 4; }
                 pos += w * 4; y++; let reachLeft = false, reachRight = false;
-                while (y < h && matchColor(pos)) {
-                    colorPixel(pos);
-                    if (x > 0) { if (matchColor(pos - 4)) { if (!reachLeft) { stack.push([x - 1, y]); reachLeft = true; } } else if (reachLeft) reachLeft = false; }
-                    if (x < w - 1) { if (matchColor(pos + 4)) { if (!reachRight) { stack.push([x + 1, y]); reachRight = true; } } else if (reachRight) reachRight = false; }
-                    y++; pos += w * 4;
-                }
+                while (y < h && matchColor(pos)) { colorPixel(pos); if (x > 0) { if (matchColor(pos - 4)) { if (!reachLeft) { stack.push([x - 1, y]); reachLeft = true; } } else if (reachLeft) reachLeft = false; } if (x < w - 1) { if (matchColor(pos + 4)) { if (!reachRight) { stack.push([x + 1, y]); reachRight = true; } } else if (reachRight) reachRight = false; } y++; pos += w * 4; }
             }
             ctx.putImageData(imgData, 0, 0); saveState(); if (emit) socket.emit('fill', { x: startX, y: startY, color: fillColorHex });
         }
@@ -269,22 +285,12 @@
 
         canvas.addEventListener('touchstart', (e) => {
             if(e.target === canvas) { e.preventDefault(); document.getElementById('settingsMenu').classList.remove('show'); } 
-            const pos = getTouchPos(e); lastX = pos.x; lastY = pos.y; currentX = pos.x; currentY = pos.y;
-            socket.emit('pointer', {x: pos.x, y: pos.y});
-
-            if (isStickyMode) {
-                if (!textInput.value) { alert("Type a note first!"); return; }
-                createSticky('note_' + Date.now(), textInput.value, pos.x, pos.y, true); return;
-            }
+            const pos = getTouchPos(e); lastX = pos.x; lastY = pos.y; currentX = pos.x; currentY = pos.y; socket.emit('pointer', {x: pos.x, y: pos.y});
+            if (isStickyMode) { if (!textInput.value) return; createSticky('note_' + Date.now(), textInput.value, pos.x, pos.y, true); return; }
             if (isFillMode) { floodFill(pos.x, pos.y, colorPicker.value, true); return; }
-
             if (isTextMode || isStamping || isShapeMode) {
-                isDraggingItem = true; dragType = isTextMode ? 'text' : (isShapeMode ? 'shape' : 'stamp');
-                savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                if (isTextMode) { if (!textInput.value) return; dragData = { text: textInput.value, size: brushSize.value * 4, color: colorPicker.value }; drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false); }
-                else if (isStamping) { dragData = { emoji: document.getElementById('emojiPicker').value, size: brushSize.value * 4 }; drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false); }
-                else if (isShapeMode) { dragData = { type: shapePicker.value, color: colorPicker.value, size: brushSize.value, neon: isNeon }; }
-                return; 
+                isDraggingItem = true; dragType = isTextMode ? 'text' : (isShapeMode ? 'shape' : 'stamp'); savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                if (isTextMode) { if (!textInput.value) return; dragData = { text: textInput.value, size: brushSize.value * 4, color: colorPicker.value }; drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false); } else if (isStamping) { dragData = { emoji: document.getElementById('emojiPicker').value, size: brushSize.value * 4 }; drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false); } else if (isShapeMode) { dragData = { type: shapePicker.value, color: colorPicker.value, size: brushSize.value, neon: isNeon }; } return; 
             }
             isDrawing = true; 
         }, { passive: false });
@@ -294,38 +300,43 @@
             const pos = getTouchPos(e); socket.emit('pointer', {x: pos.x, y: pos.y});
             if (isDraggingItem) {
                 ctx.putImageData(savedImageData, 0, 0); 
-                if (dragType === 'text') drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false);
-                else if (dragType === 'stamp') drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false);
-                else if (dragType === 'shape') drawShape(dragData.type, currentX, currentY, pos.x, pos.y, dragData.color, dragData.size, false, dragData.neon);
+                if (dragType === 'text') drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false); else if (dragType === 'stamp') drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false); else if (dragType === 'shape') drawShape(dragData.type, currentX, currentY, pos.x, pos.y, dragData.color, dragData.size, false, dragData.neon);
                 lastX = pos.x; lastY = pos.y; return;
             }
             if (!isDrawing) return;
-            
             ctx.globalCompositeOperation = isEraser ? 'destination-out' : (isMagicMode ? 'destination-over' : 'source-over'); ctx.globalAlpha = isHighlight ? 0.3 : 1.0; 
-            drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser, isHighlight, isNeon, isMagicMode);
-            
-            if (isMirrorMode && !isEraser && !isMagicMode) {
-                drawLine(canvas.width - currentX, currentY, canvas.width - pos.x, pos.y, colorPicker.value, brushSize.value, true, false, isHighlight, isNeon, false);
-            }
+            drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser, isHighlight, isNeon, isMagicMode, isLaserMode); // NEW: Passed laser flag
+            if (isMirrorMode && !isEraser && !isMagicMode && !isLaserMode) { drawLine(canvas.width - currentX, currentY, canvas.width - pos.x, pos.y, colorPicker.value, brushSize.value, true, false, isHighlight, isNeon, false, false); }
             currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
         canvas.addEventListener('touchend', () => {
             if (isDraggingItem) {
                 isDraggingItem = false;
-                if (dragType === 'text') socket.emit('text', { text: dragData.text, x: lastX, y: lastY, color: dragData.color, size: dragData.size });
-                else if (dragType === 'stamp') socket.emit('stamp', { emoji: dragData.emoji, x: lastX, y: lastY, size: dragData.size });
-                else if (dragType === 'shape') socket.emit('shape', { type: dragData.type, x0: currentX, y0: currentY, x1: lastX, y1: lastY, color: dragData.color, size: dragData.size, neon: dragData.neon });
+                if (dragType === 'text') socket.emit('text', { text: dragData.text, x: lastX, y: lastY, color: dragData.color, size: dragData.size }); else if (dragType === 'stamp') socket.emit('stamp', { emoji: dragData.emoji, x: lastX, y: lastY, size: dragData.size }); else if (dragType === 'shape') socket.emit('shape', { type: dragData.type, x0: currentX, y0: currentY, x1: lastX, y1: lastY, color: dragData.color, size: dragData.size, neon: dragData.neon });
                 saveState(); return;
             }
-            if (isDrawing) saveState(); 
+            if (isDrawing && !isLaserMode) saveState(); // Don't save laser strokes!
             isDrawing = false; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         });
 
-        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon, magic) { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; applyNeon(color, size, neon); ctx.stroke(); ctx.closePath(); if (!emit) return; socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon, magic }); }
-        socket.on('drawing', (data) => { ctx.globalCompositeOperation = data.erasing ? 'destination-out' : (data.magic ? 'destination-over' : 'source-over'); ctx.globalAlpha = data.highlight ? 0.3 : 1.0; drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon, data.magic); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; });
-        function drawShape(t, x0, y0, x1, y1, c, s, emit, n) { ctx.beginPath(); ctx.strokeStyle = c; ctx.lineWidth = s; ctx.lineCap = 'round'; applyNeon(c, s, n); if (t === 'rect') ctx.rect(x0, y0, x1 - x0, y1 - y0); else if (t === 'circle') ctx.arc(x0, y0, Math.hypot(x1 - x0, y1 - y0), 0, 2 * Math.PI); else if (t === 'line') { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke(); ctx.closePath(); if (emit) socket.emit('shape', { type: t, x0, y0, x1, y1, color: c, size: s, neon: n }); }
-        socket.on('shape', (d) => { drawShape(d.type, d.x0, d.y0, d.x1, d.y1, d.color, d.size, false, d.neon); ctx.shadowBlur = 0; });
+        // NEW: Laser Pen Logic built into drawLine
+        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon, magic, laser) { 
+            const activeCtx = laser ? ctxLaser : ctx; // Draw to glass layer if laser!
+            activeCtx.beginPath(); activeCtx.moveTo(x0, y0); activeCtx.lineTo(x1, y1); activeCtx.strokeStyle = color; activeCtx.lineWidth = size; activeCtx.lineCap = 'round'; 
+            if (neon || laser) { activeCtx.shadowBlur = size * 2; activeCtx.shadowColor = color; } else { activeCtx.shadowBlur = 0; }
+            activeCtx.stroke(); activeCtx.closePath(); activeCtx.shadowBlur = 0;
+            if (!emit) return; socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon, magic, laser }); 
+        }
+        socket.on('drawing', (data) => { 
+            const activeCtx = data.laser ? ctxLaser : ctx;
+            activeCtx.globalCompositeOperation = data.erasing ? 'destination-out' : (data.magic ? 'destination-over' : 'source-over'); activeCtx.globalAlpha = data.highlight ? 0.3 : 1.0; 
+            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon, data.magic, data.laser); 
+            activeCtx.globalCompositeOperation = 'source-over'; activeCtx.globalAlpha = 1.0; activeCtx.shadowBlur = 0; 
+        });
+
+        function drawShape(t, x0, y0, x1, y1, c, s, emit, n) { ctx.beginPath(); ctx.strokeStyle = c; ctx.lineWidth = s; ctx.lineCap = 'round'; if(n) {ctx.shadowBlur = s*2; ctx.shadowColor=c;} if (t === 'rect') ctx.rect(x0, y0, x1 - x0, y1 - y0); else if (t === 'circle') ctx.arc(x0, y0, Math.hypot(x1 - x0, y1 - y0), 0, 2 * Math.PI); else if (t === 'line') { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke(); ctx.closePath(); ctx.shadowBlur=0; if (emit) socket.emit('shape', { type: t, x0, y0, x1, y1, color: c, size: s, neon: n }); }
+        socket.on('shape', (d) => { drawShape(d.type, d.x0, d.y0, d.x1, d.y1, d.color, d.size, false, d.neon); });
         function drawStamp(x, y, emoji, size, emit) { ctx.font = `${size}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, x, y); if (emit) socket.emit('stamp', { x, y, emoji, size }); }
         socket.on('stamp', (d) => drawStamp(d.x, d.y, d.emoji, d.size, false));
         function drawText(text, x, y, color, size, emit) { ctx.font = `bold ${size}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color; ctx.fillText(text, x, y); if (emit) socket.emit('text', { text, x, y, color, size }); }
@@ -339,16 +350,36 @@
         function performUndo(emit) { if (history.length > 1) { history.pop(); const img = new Image(); img.src = history[history.length - 1]; img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; if (emit) socket.emit('undo'); } }
         document.getElementById('undoBtn').addEventListener('click', () => performUndo(true)); socket.on('undo', () => performUndo(false));
         document.getElementById('clearBtn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveState(); socket.emit('clear'); }); socket.on('clear', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveState(); });
-
         function loadTemplate(emoji, emit = true) { ctx.font = `${canvas.width * 0.6}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, canvas.width / 2, canvas.height / 2); document.getElementById('settingsMenu').classList.remove('show'); saveState(); if (emit) socket.emit('template', emoji); }
         socket.on('template', (emoji) => loadTemplate(emoji, false));
 
-        document.getElementById('imageLoader').addEventListener('change', function(e) { const reader = new FileReader(); reader.onload = function(event) { const img = new Image(); img.onload = function() { const maxDim = window.innerWidth * 0.8; let scale = 1; if (img.width > maxDim || img.height > maxDim) scale = Math.min(maxDim / img.width, maxDim / img.height); const w = img.width * scale, h = img.height * scale; const startX = (canvas.width - w) / 2, startY = (canvas.height - h) / 2; ctx.drawImage(img, startX, startY, w, h); saveState(); const tempC = document.createElement('canvas'); tempC.width = w; tempC.height = h; tempC.getContext('2d').drawImage(img, 0, 0, w, h); socket.emit('image', { imgData: tempC.toDataURL('image/jpeg', 0.6), x: startX, y: startY, w: w, h: h }); }; img.src = event.target.result; }; if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]); }, false);
-        socket.on('image', (data) => { const img = new Image(); img.onload = () => { ctx.drawImage(img, data.x, data.y, data.w, data.h); saveState(); }; img.src = data.imgData; });
+        // NEW: Polaroid Photo Upload Logic
+        document.getElementById('imageLoader').addEventListener('change', function(e) { 
+            const reader = new FileReader(); reader.onload = function(event) { 
+                const img = new Image(); img.onload = function() { 
+                    const maxDim = window.innerWidth * 0.6; let scale = 1; if (img.width > maxDim || img.height > maxDim) scale = Math.min(maxDim / img.width, maxDim / img.height); 
+                    const w = img.width * scale, h = img.height * scale; const startX = (canvas.width - w) / 2, startY = (canvas.height - h) / 2; 
+                    
+                    // Draw Polaroid Frame
+                    const pad = 15; const bottomPad = 40;
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 10; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
+                    ctx.fillStyle = 'white'; ctx.fillRect(startX - pad, startY - pad, w + pad*2, h + pad + bottomPad);
+                    ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; // reset
+                    ctx.drawImage(img, startX, startY, w, h);
+                    ctx.fillStyle = 'rgba(255, 255, 200, 0.7)'; ctx.fillRect(startX + (w/2) - 20, startY - pad - 7, 40, 15); // Tape
+                    
+                    saveState(); 
+                    
+                    // Compress and send the combined polaroid frame
+                    const tempC = document.createElement('canvas'); tempC.width = w + pad*2; tempC.height = h + pad + bottomPad + 10; const tCtx = tempC.getContext('2d');
+                    tCtx.fillStyle = 'white'; tCtx.fillRect(0, 0, tempC.width, tempC.height - 10);
+                    tCtx.drawImage(img, pad, pad, w, h); tCtx.fillStyle = 'rgba(255, 255, 200, 0.7)'; tCtx.fillRect((tempC.width/2) - 20, 8, 40, 15);
+                    socket.emit('image', { imgData: tempC.toDataURL('image/jpeg', 0.8), x: startX - pad, y: startY - pad, w: tempC.width, h: tempC.height }); 
+                }; img.src = event.target.result; 
+            }; if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]); 
+        }, false);
+        socket.on('image', (data) => { const img = new Image(); img.onload = () => { ctx.shadowColor='rgba(0,0,0,0.3)'; ctx.shadowBlur=10; ctx.shadowOffsetX=5; ctx.shadowOffsetY=5; ctx.drawImage(img, data.x, data.y, data.w, data.h); ctx.shadowBlur=0; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0; saveState(); }; img.src = data.imgData; });
 
-        function getMergedCanvas() { const temp = document.createElement('canvas'); temp.width = canvas.width; temp.height = canvas.height; const tCtx = temp.getContext('2d'); tCtx.fillStyle = document.body.style.backgroundColor || '#ffffff'; tCtx.fillRect(0, 0, temp.width, temp.height); tCtx.drawImage(canvas, 0, 0); return temp; }
-        document.getElementById('saveBtn').addEventListener('click', () => { const link = document.createElement('a'); link.download = 'Our-Artwork.png'; link.href = getMergedCanvas().toDataURL('image/png'); link.click(); document.getElementById('settingsMenu').classList.remove('show'); });
-        document.getElementById('pdfBtn').addEventListener('click', () => { const { jsPDF } = window.jspdf; const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? "landscape" : "portrait", unit: "px", format: [canvas.width, canvas.height] }); const merged = getMergedCanvas(); pdf.addImage(merged.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, canvas.width, canvas.height); pdf.save("Our-Artwork.pdf"); document.getElementById('settingsMenu').classList.remove('show'); });
     </script>
 </body>
 </html>
