@@ -10,7 +10,6 @@
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #ffffff; font-family: system-ui, sans-serif; transition: background-color 0.3s ease; }
         canvas { display: block; background-color: transparent; }
         
-        /* Layout & Toolbars */
         .top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 20px; z-index: 10; }
         .bottom-bar { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); display: flex; gap: 15px; align-items: center; z-index: 10; max-width: 90%; overflow-x: auto; white-space: nowrap; }
         .bottom-bar::-webkit-scrollbar { display: none; }
@@ -20,16 +19,13 @@
         button:active { transform: scale(0.9); }
         .active-tool { background-color: #333 !important; color: white !important; box-shadow: 0 0 10px rgba(0,0,0,0.3) !important; }
         
-        /* Menus & Settings */
         .settings-modal { display: none; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); padding: 20px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 20; flex-direction: column; gap: 15px; min-width: 200px; }
         .settings-modal.show { display: flex; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #333; font-size: 14px; }
         .setting-row button { border-radius: 10px; width: auto; height: auto; padding: 8px 15px; font-size: 14px; background: #eee; }
         .template-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .template-btn { width: 100%; height: 60px; border-radius: 10px; border: 2px solid #ddd; background: white; font-size: 24px; display: flex; align-items: center; justify-content: center; }
-        #installBtn { background: #4facfe; color: white; display: none; }
         
-        /* Inputs & UI Details */
         input[type="color"] { -webkit-appearance: none; border: 2px solid #ddd; width: 40px; height: 40px; padding: 0; border-radius: 50%; overflow: hidden; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; } input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
         input[type="range"] { width: 80px; accent-color: #333; }
@@ -38,58 +34,59 @@
         #textInput { border: 2px solid #ddd; border-radius: 15px; padding: 5px 10px; width: 90px; font-size: 14px; outline: none; }
         #partnerPointer { position: absolute; font-size: 24px; pointer-events: none; transition: opacity 0.3s; opacity: 0; z-index: 5; transform: translate(-50%, -100%); }
 
-        /* Dark Mode */
-        body.dark-ui .top-bar, body.dark-ui .bottom-bar, body.dark-ui .settings-modal, body.dark-ui #chatBox { background: rgba(30, 30, 30, 0.9); color: #fff; }
-        body.dark-ui .tool-group, body.dark-ui .setting-row, body.dark-ui #chatMessages { color: #ccc; }
+        body.dark-ui .top-bar, body.dark-ui .bottom-bar, body.dark-ui .settings-modal { background: rgba(30, 30, 30, 0.9); color: #fff; }
+        body.dark-ui .tool-group, body.dark-ui .setting-row { color: #ccc; }
         body.dark-ui button { background-color: #444; color: #fff; }
         body.dark-ui .active-tool { background-color: #4facfe !important; }
         body.dark-ui select, body.dark-ui input[type="text"] { color: white; background: #333; border-color: #555; }
 
-        /* NEW 1: Login Screen */
         #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffebf0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #loginScreen h1 { color: #ff4d85; margin-bottom: 20px; text-align: center; }
-        #loginInput { padding: 15px; font-size: 18px; border-radius: 20px; border: 2px solid #ff4d85; outline: none; text-align: center; margin-bottom: 20px; width: 250px; }
+        .login-field { padding: 15px; font-size: 16px; border-radius: 20px; border: 2px solid #ff4d85; outline: none; text-align: center; margin-bottom: 15px; width: 250px; }
         #loginBtn { border-radius: 20px; width: 150px; background: #ff4d85; color: white; font-weight: bold; }
 
-        /* NEW 2: Chat Box */
-        #chatBox { position: absolute; bottom: 85px; right: 20px; width: 220px; height: 300px; background: rgba(255,255,255,0.95); border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: none; flex-direction: column; z-index: 15; overflow: hidden; }
-        #chatBox.show { display: flex; }
-        #chatMessages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
-        .msg { background: #f0f0f0; padding: 8px 12px; border-radius: 15px; align-self: flex-start; max-width: 90%; word-wrap: break-word; }
-        .msg.me { background: #4facfe; color: white; align-self: flex-end; }
-        #chatInputBox { display: flex; padding: 10px; border-top: 1px solid #ddd; }
-        #chatMsgInput { flex: 1; border: none; outline: none; background: transparent; }
+        /* NEW: Rednote Livestream Chat UI */
+        #liveChatContainer { position: absolute; bottom: 90px; left: 10px; width: 250px; height: 300px; display: flex; flex-direction: column; justify-content: flex-end; z-index: 12; pointer-events: none; }
+        #liveChatMessages { display: flex; flex-direction: column; gap: 5px; overflow-y: hidden; margin-bottom: 10px; align-items: flex-start; }
+        .live-msg { background: rgba(0, 0, 0, 0.4); color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; word-wrap: break-word; max-width: 100%; animation: slideIn 0.3s ease-out; text-shadow: 0 1px 2px rgba(0,0,0,0.5); transition: opacity 1s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-out { opacity: 0; }
+        
+        #liveChatInputArea { pointer-events: auto; display: flex; gap: 5px; background: rgba(255,255,255,0.3); backdrop-filter: blur(5px); padding: 5px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); }
+        #liveChatInput { flex: 1; background: transparent; border: none; outline: none; color: #333; padding: 5px 10px; font-weight: bold; }
+        body.dark-ui #liveChatInput { color: white; }
+        #liveChatInput::placeholder { color: #666; }
+        body.dark-ui #liveChatInput::placeholder { color: #ccc; }
+        #liveSendBtn { background: #ff4d85; color: white; border-radius: 15px; padding: 5px 15px; font-size: 12px; width: auto; height: auto; }
 
-        /* NEW 3: Sticky Notes */
         #stickyContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
         .sticky-note { position: absolute; padding: 15px; background: #fffde7; box-shadow: 2px 5px 10px rgba(0,0,0,0.2); border-radius: 5px; font-family: 'Comic Sans MS', cursive, sans-serif; font-size: 16px; color: #333; pointer-events: auto; transform: rotate(-2deg); min-width: 80px; text-align: center; }
     </style>
 </head>
 <body>
     <div id="loginScreen">
-        <h1>Welcome to Our Canvas 💖</h1>
-        <p style="color: #666; font-weight: bold;">Enter the Secret Password:</p>
-        <input type="password" id="loginInput" placeholder="Password...">
+        <h1>Our Canvas 💖</h1>
+        <p style="color: #666; font-weight: bold;">Who are you?</p>
+        <input type="text" id="usernameInput" class="login-field" placeholder="Your Name...">
+        <p style="color: #666; font-weight: bold;">Secret Password:</p>
+        <input type="password" id="loginInput" class="login-field" placeholder="Password...">
         <button id="loginBtn">Enter</button>
     </div>
 
     <div id="partnerPointer">👆</div>
-    
     <div id="stickyContainer"></div>
 
     <div class="top-bar">
         <div class="tool-group"><span>Menu</span><button id="menuBtn">⚙️</button></div>
-        <div class="tool-group"><span>Chat</span><button id="chatToggleBtn">💬</button></div>
         <div class="tool-group"><span>Undo</span><button id="undoBtn">↩️</button></div>
         <div class="tool-group"><span>Clear</span><button id="clearBtn">🗑️</button></div>
     </div>
 
-    <div id="chatBox">
-        <div style="background:#ff4d85; color:white; font-weight:bold; text-align:center; padding:10px;">Our Chat 💕</div>
-        <div id="chatMessages"></div>
-        <div id="chatInputBox">
-            <input type="text" id="chatMsgInput" placeholder="Type a message...">
-            <button id="sendChatBtn" style="width:auto;height:auto;padding:5px 10px;border-radius:10px;background:#ff4d85;color:white;">Send</button>
+    <div id="liveChatContainer">
+        <div id="liveChatMessages"></div>
+        <div id="liveChatInputArea">
+            <input type="text" id="liveChatInput" placeholder="Say something..." autocomplete="off">
+            <button id="liveSendBtn">Send</button>
         </div>
     </div>
 
@@ -108,16 +105,14 @@
         <div class="setting-row"><span>Background</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
         <div class="setting-row"><span>Export PNG</span><button id="saveBtn">💾 Save</button></div>
         <div class="setting-row"><span>Export PDF</span><button id="pdfBtn">📄 Save</button></div>
-        <div class="setting-row"><button id="installBtn">📲 Install App</button></div>
+        <div class="setting-row"><button id="installBtn" style="display:none;">📲 Install App</button></div>
     </div>
 
     <div class="bottom-bar">
         <div class="tool-group"><span>Pen</span><input type="color" id="colorPicker" value="#000000"></div>
         <div class="tool-group"><span>Size</span><input type="range" id="brushSize" min="1" max="50" value="5"></div>
-        
         <div class="tool-group"><span>Mirror</span><button id="mirrorBtn" style="background:#e0f7fa;">🦋</button></div>
         <div class="tool-group"><span>Note</span><button id="stickyBtn" style="background:#fff9c4;">📌</button></div>
-
         <div class="tool-group"><span>Fill</span><button id="fillBtn" style="background:#d4f1ff;">🪣</button></div>
         <div class="tool-group"><span>Behind</span><button id="magicBtn" style="background:#ffe0f0;">🪄</button></div>
         <div class="tool-group"><span>Neon</span><button id="neonBtn">✨</button></div>
@@ -137,93 +132,89 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
         const socket = io();
+        let myName = "Artist";
         
-        // --- NEW: Security Login Logic ---
         const loginScreen = document.getElementById('loginScreen');
+        const usernameInput = document.getElementById('usernameInput');
         const loginInput = document.getElementById('loginInput');
         const loginBtn = document.getElementById('loginBtn');
 
-        function attemptLogin() {
+        loginBtn.addEventListener('click', () => {
             if (loginInput.value.toLowerCase() === 'kushu') {
+                myName = usernameInput.value.trim() || "Artist";
                 loginScreen.style.display = 'none';
-                socket.emit('joinRoom', 'kushu'); // Securely join the private room!
+                socket.emit('joinRoom', { roomCode: 'kushu', username: myName });
             } else {
                 alert("Wrong password! Hint: it's kushu 😸");
             }
+        });
+
+        // --- NEW: Rednote Livestream Chat Engine ---
+        const liveChatMessages = document.getElementById('liveChatMessages');
+        const liveChatInput = document.getElementById('liveChatInput');
+        const liveSendBtn = document.getElementById('liveSendBtn');
+
+        function addLiveMessage(text, sender) {
+            const msgEl = document.createElement('div');
+            msgEl.className = 'live-msg';
+            msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            liveChatMessages.appendChild(msgEl);
+            liveChatMessages.scrollTop = liveChatMessages.scrollHeight;
+            
+            // Magic fade out after 7 seconds!
+            setTimeout(() => {
+                msgEl.classList.add('fade-out');
+                setTimeout(() => msgEl.remove(), 1000); // Remove from HTML after fade
+            }, 7000);
         }
-        loginBtn.addEventListener('click', attemptLogin);
-        
-        // --- NEW: Chat Logic ---
-        const chatToggleBtn = document.getElementById('chatToggleBtn');
-        const chatBox = document.getElementById('chatBox');
-        const chatMessages = document.getElementById('chatMessages');
-        const chatMsgInput = document.getElementById('chatMsgInput');
-        const sendChatBtn = document.getElementById('sendChatBtn');
 
-        chatToggleBtn.addEventListener('click', () => chatBox.classList.toggle('show'));
-
-        function appendMessage(msg, isMe) {
-            const div = document.createElement('div');
-            div.className = 'msg ' + (isMe ? 'me' : '');
-            div.innerText = msg;
-            chatMessages.appendChild(div);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Auto scroll down
-        }
-
-        sendChatBtn.addEventListener('click', () => {
-            const text = chatMsgInput.value.trim();
+        liveSendBtn.addEventListener('click', () => {
+            const text = liveChatInput.value.trim();
             if (text) {
-                appendMessage(text, true);
-                socket.emit('chatMessage', text);
-                chatMsgInput.value = '';
+                addLiveMessage(text, myName); // Show on my screen
+                socket.emit('chatMessage', { text: text }); // Send to partner
+                liveChatInput.value = '';
             }
         });
-        socket.on('chatMessage', (msg) => appendMessage(msg, false));
+        socket.on('chatMessage', (data) => addLiveMessage(data.text, data.sender));
 
-        // --- NEW: Draggable Sticky Notes ---
+        // Sticky Notes
         function createSticky(id, text, x, y, emit) {
             const note = document.createElement('div');
             note.id = id; note.className = 'sticky-note'; note.innerText = text;
             note.style.left = x + 'px'; note.style.top = y + 'px';
             document.getElementById('stickyContainer').appendChild(note);
 
-            // Dragging logic for mobile
             let isDraggingNote = false, offsetX, offsetY;
             note.addEventListener('touchstart', (e) => {
-                isDraggingNote = true;
-                const touch = e.touches[0];
+                isDraggingNote = true; const touch = e.touches[0];
                 offsetX = touch.clientX - note.offsetLeft; offsetY = touch.clientY - note.offsetTop;
             }, {passive: false});
             note.addEventListener('touchmove', (e) => {
-                if(!isDraggingNote) return; e.preventDefault();
-                const touch = e.touches[0];
+                if(!isDraggingNote) return; e.preventDefault(); const touch = e.touches[0];
                 const nx = touch.clientX - offsetX, ny = touch.clientY - offsetY;
                 note.style.left = nx + 'px'; note.style.top = ny + 'px';
-                socket.emit('stickyMove', {id, x: nx, y: ny}); // Send live drag to partner!
+                socket.emit('stickyMove', {id, x: nx, y: ny});
             }, {passive: false});
             note.addEventListener('touchend', () => isDraggingNote = false);
-
             if(emit) socket.emit('stickyAdd', {id, text, x, y});
         }
-
         socket.on('stickyAdd', (data) => createSticky(data.id, data.text, data.x, data.y, false));
         socket.on('stickyMove', (data) => {
             const note = document.getElementById(data.id);
             if(note) { note.style.left = data.x + 'px'; note.style.top = data.y + 'px'; }
         });
 
-        // Setup base Canvas
+        // Tool Setup
         const canvas = document.getElementById('drawingBoard'); const ctx = canvas.getContext('2d');
         const partnerPointer = document.getElementById('partnerPointer');
-        
         let history = []; const MAX_HISTORY = 10;
         function saveState() { history.push(canvas.toDataURL()); if (history.length > MAX_HISTORY) history.shift(); }
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; saveState(); }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
         let isDrawing = false, currentX = 0, currentY = 0;
-        let isEraser = false, isStamping = false, isTextMode = false, isHighlight = false, isNeon = false, isShapeMode = false, isFillMode = false, isMagicMode = false;
-        let isMirrorMode = false, isStickyMode = false; // NEW Tools
+        let isEraser = false, isStamping = false, isTextMode = false, isHighlight = false, isNeon = false, isShapeMode = false, isFillMode = false, isMagicMode = false, isMirrorMode = false, isStickyMode = false;
         const colorPicker = document.getElementById('colorPicker'); const brushSize = document.getElementById('brushSize');
         const eraserBtn = document.getElementById('eraserBtn'); const stampBtn = document.getElementById('stampBtn'); 
         const textBtn = document.getElementById('textBtn'); const highlightBtn = document.getElementById('highlightBtn'); 
@@ -252,19 +243,40 @@
         let pointerTimeout; let isDraggingItem = false, dragType = '', dragData = {}, savedImageData = null, lastX = 0, lastY = 0;
         function applyNeon(color, size, active) { if (active) { ctx.shadowBlur = size * 2; ctx.shadowColor = color; } else { ctx.shadowBlur = 0; } }
 
+        function hexToRgba(hex) { let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return [r, g, b, 255]; }
+        function floodFill(startX, startY, fillColorHex, emit) {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height); const data = imgData.data; const w = canvas.width; const h = canvas.height;
+            const startPos = (startY * w + startX) * 4; const startR = data[startPos], startG = data[startPos + 1], startB = data[startPos + 2], startA = data[startPos + 3];
+            const fillRgba = hexToRgba(fillColorHex);
+            if (startR === fillRgba[0] && startG === fillRgba[1] && startB === fillRgba[2] && startA === fillRgba[3]) return;
+            const matchColor = (pos) => data[pos] === startR && data[pos+1] === startG && data[pos+2] === startB && data[pos+3] === startA;
+            const colorPixel = (pos) => { data[pos] = fillRgba[0]; data[pos+1] = fillRgba[1]; data[pos+2] = fillRgba[2]; data[pos+3] = fillRgba[3]; };
+            const stack = [[startX, startY]];
+            while (stack.length) {
+                let [x, y] = stack.pop(); let pos = (y * w + x) * 4;
+                while (y >= 0 && matchColor(pos)) { y--; pos -= w * 4; }
+                pos += w * 4; y++; let reachLeft = false, reachRight = false;
+                while (y < h && matchColor(pos)) {
+                    colorPixel(pos);
+                    if (x > 0) { if (matchColor(pos - 4)) { if (!reachLeft) { stack.push([x - 1, y]); reachLeft = true; } } else if (reachLeft) reachLeft = false; }
+                    if (x < w - 1) { if (matchColor(pos + 4)) { if (!reachRight) { stack.push([x + 1, y]); reachRight = true; } } else if (reachRight) reachRight = false; }
+                    y++; pos += w * 4;
+                }
+            }
+            ctx.putImageData(imgData, 0, 0); saveState(); if (emit) socket.emit('fill', { x: startX, y: startY, color: fillColorHex });
+        }
+        socket.on('fill', (data) => floodFill(data.x, data.y, data.color, false));
+
         canvas.addEventListener('touchstart', (e) => {
-            if(e.target === canvas) { e.preventDefault(); } 
+            if(e.target === canvas) { e.preventDefault(); document.getElementById('settingsMenu').classList.remove('show'); } 
             const pos = getTouchPos(e); lastX = pos.x; lastY = pos.y; currentX = pos.x; currentY = pos.y;
             socket.emit('pointer', {x: pos.x, y: pos.y});
 
-            // NEW: Add a physical Sticky Note!
             if (isStickyMode) {
-                const noteText = textInput.value;
-                if (!noteText) { alert("Type a note in the text box first!"); return; }
-                const noteId = 'note_' + Date.now();
-                createSticky(noteId, noteText, pos.x, pos.y, true);
-                return;
+                if (!textInput.value) { alert("Type a note first!"); return; }
+                createSticky('note_' + Date.now(), textInput.value, pos.x, pos.y, true); return;
             }
+            if (isFillMode) { floodFill(pos.x, pos.y, colorPicker.value, true); return; }
 
             if (isTextMode || isStamping || isShapeMode) {
                 isDraggingItem = true; dragType = isTextMode ? 'text' : (isShapeMode ? 'shape' : 'stamp');
@@ -289,18 +301,12 @@
             }
             if (!isDrawing) return;
             
-            ctx.globalCompositeOperation = isEraser ? 'destination-out' : (isMagicMode ? 'destination-over' : 'source-over'); 
-            ctx.globalAlpha = isHighlight ? 0.3 : 1.0; 
-            
-            // Standard Line
+            ctx.globalCompositeOperation = isEraser ? 'destination-out' : (isMagicMode ? 'destination-over' : 'source-over'); ctx.globalAlpha = isHighlight ? 0.3 : 1.0; 
             drawLine(currentX, currentY, pos.x, pos.y, colorPicker.value, brushSize.value, true, isEraser, isHighlight, isNeon, isMagicMode);
             
-            // NEW: The Mirror Pen Engine!
             if (isMirrorMode && !isEraser && !isMagicMode) {
-                const mirrorX0 = canvas.width - currentX; const mirrorX1 = canvas.width - pos.x;
-                drawLine(mirrorX0, currentY, mirrorX1, pos.y, colorPicker.value, brushSize.value, true, false, isHighlight, isNeon, false);
+                drawLine(canvas.width - currentX, currentY, canvas.width - pos.x, pos.y, colorPicker.value, brushSize.value, true, false, isHighlight, isNeon, false);
             }
-            
             currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
@@ -316,17 +322,8 @@
             isDrawing = false; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         });
 
-        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon, magic) {
-            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round';
-            applyNeon(color, size, neon); ctx.stroke(); ctx.closePath();
-            if (!emit) return; socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon, magic });
-        }
-        socket.on('drawing', (data) => {
-            ctx.globalCompositeOperation = data.erasing ? 'destination-out' : (data.magic ? 'destination-over' : 'source-over'); ctx.globalAlpha = data.highlight ? 0.3 : 1.0;
-            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon, data.magic);
-            ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
-        });
-
+        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon, magic) { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.strokeStyle = color; ctx.lineWidth = size; ctx.lineCap = 'round'; applyNeon(color, size, neon); ctx.stroke(); ctx.closePath(); if (!emit) return; socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon, magic }); }
+        socket.on('drawing', (data) => { ctx.globalCompositeOperation = data.erasing ? 'destination-out' : (data.magic ? 'destination-over' : 'source-over'); ctx.globalAlpha = data.highlight ? 0.3 : 1.0; drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon, data.magic); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; });
         function drawShape(t, x0, y0, x1, y1, c, s, emit, n) { ctx.beginPath(); ctx.strokeStyle = c; ctx.lineWidth = s; ctx.lineCap = 'round'; applyNeon(c, s, n); if (t === 'rect') ctx.rect(x0, y0, x1 - x0, y1 - y0); else if (t === 'circle') ctx.arc(x0, y0, Math.hypot(x1 - x0, y1 - y0), 0, 2 * Math.PI); else if (t === 'line') { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke(); ctx.closePath(); if (emit) socket.emit('shape', { type: t, x0, y0, x1, y1, color: c, size: s, neon: n }); }
         socket.on('shape', (d) => { drawShape(d.type, d.x0, d.y0, d.x1, d.y1, d.color, d.size, false, d.neon); ctx.shadowBlur = 0; });
         function drawStamp(x, y, emoji, size, emit) { ctx.font = `${size}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, x, y); if (emit) socket.emit('stamp', { x, y, emoji, size }); }
@@ -335,12 +332,10 @@
         socket.on('text', (d) => drawText(d.text, d.x, d.y, d.color, d.size, false));
         socket.on('pointer', (d) => { partnerPointer.style.left = d.x + 'px'; partnerPointer.style.top = d.y + 'px'; partnerPointer.style.opacity = 1; clearTimeout(pointerTimeout); pointerTimeout = setTimeout(() => { partnerPointer.style.opacity = 0; }, 1000); });
         
-        // Settings Menus & Other UI Handlers
         document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('settingsMenu').classList.toggle('show'));
         document.getElementById('darkModeBtn').addEventListener('click', () => document.body.classList.toggle('dark-ui'));
         document.getElementById('bgColorPicker').addEventListener('input', (e) => { document.body.style.backgroundColor = e.target.value; socket.emit('bgColor', e.target.value); });
         socket.on('bgColor', (color) => { document.getElementById('bgColorPicker').value = color; document.body.style.backgroundColor = color; });
-
         function performUndo(emit) { if (history.length > 1) { history.pop(); const img = new Image(); img.src = history[history.length - 1]; img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; if (emit) socket.emit('undo'); } }
         document.getElementById('undoBtn').addEventListener('click', () => performUndo(true)); socket.on('undo', () => performUndo(false));
         document.getElementById('clearBtn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveState(); socket.emit('clear'); }); socket.on('clear', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); saveState(); });
@@ -350,6 +345,7 @@
 
         document.getElementById('imageLoader').addEventListener('change', function(e) { const reader = new FileReader(); reader.onload = function(event) { const img = new Image(); img.onload = function() { const maxDim = window.innerWidth * 0.8; let scale = 1; if (img.width > maxDim || img.height > maxDim) scale = Math.min(maxDim / img.width, maxDim / img.height); const w = img.width * scale, h = img.height * scale; const startX = (canvas.width - w) / 2, startY = (canvas.height - h) / 2; ctx.drawImage(img, startX, startY, w, h); saveState(); const tempC = document.createElement('canvas'); tempC.width = w; tempC.height = h; tempC.getContext('2d').drawImage(img, 0, 0, w, h); socket.emit('image', { imgData: tempC.toDataURL('image/jpeg', 0.6), x: startX, y: startY, w: w, h: h }); }; img.src = event.target.result; }; if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]); }, false);
         socket.on('image', (data) => { const img = new Image(); img.onload = () => { ctx.drawImage(img, data.x, data.y, data.w, data.h); saveState(); }; img.src = data.imgData; });
+
         function getMergedCanvas() { const temp = document.createElement('canvas'); temp.width = canvas.width; temp.height = canvas.height; const tCtx = temp.getContext('2d'); tCtx.fillStyle = document.body.style.backgroundColor || '#ffffff'; tCtx.fillRect(0, 0, temp.width, temp.height); tCtx.drawImage(canvas, 0, 0); return temp; }
         document.getElementById('saveBtn').addEventListener('click', () => { const link = document.createElement('a'); link.download = 'Our-Artwork.png'; link.href = getMergedCanvas().toDataURL('image/png'); link.click(); document.getElementById('settingsMenu').classList.remove('show'); });
         document.getElementById('pdfBtn').addEventListener('click', () => { const { jsPDF } = window.jspdf; const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? "landscape" : "portrait", unit: "px", format: [canvas.width, canvas.height] }); const merged = getMergedCanvas(); pdf.addImage(merged.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, canvas.width, canvas.height); pdf.save("Our-Artwork.pdf"); document.getElementById('settingsMenu').classList.remove('show'); });
