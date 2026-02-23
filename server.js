@@ -18,9 +18,7 @@ io.on('connection', (socket) => {
         socket.username = data.username || "Artist";
     });
 
-    const broadcast = (event, data) => {
-        if (socket.room) socket.to(socket.room).emit(event, data);
-    };
+    const broadcast = (event, data) => { if (socket.room) socket.to(socket.room).emit(event, data); };
 
     socket.on('chatMessage', (data) => broadcast('chatMessage', { text: data.text, sender: socket.username }));
     socket.on('drawing', (data) => broadcast('drawing', data));
@@ -38,9 +36,10 @@ io.on('connection', (socket) => {
     socket.on('foil', () => broadcast('foil'));
     socket.on('scratch', (data) => broadcast('scratch', data));
 
-    // NEW: Object Engine Events!
+    // Object Engine Events
     socket.on('addObj', (data) => broadcast('addObj', data));
     socket.on('moveObj', (data) => broadcast('moveObj', data));
+    socket.on('scaleObj', (data) => broadcast('scaleObj', data)); // NEW: Resizing!
     socket.on('deleteObj', (id) => broadcast('deleteObj', id));
 
     socket.on('disconnect', () => console.log('An artist disconnected'));
