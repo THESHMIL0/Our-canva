@@ -12,37 +12,41 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('A new artist connected:', socket.id);
 
-    // NEW: Join Private Room
-    socket.on('joinRoom', (password) => {
-        socket.join(password);
-        socket.room = password;
-        console.log(`An artist securely joined room: ${password}`);
+    // NEW: Join private room with a Username
+    socket.on('joinRoom', (data) => {
+        socket.join(data.roomCode);
+        socket.room = data.roomCode; 
+        socket.username = data.username || "Artist";
+        console.log(`${socket.username} joined room: ${data.roomCode}`);
     });
 
-    // Helper function to ONLY broadcast to the specific private room
-    const broadcastToRoom = (event, data) => {
-        if (socket.room) socket.to(socket.room).emit(event, data);
+    const broadcast = (event, data) => {
+        if (socket.room) {
+            socket.to(socket.room).emit(event, data);
+        }
     };
 
-    // Existing drawing events now locked to the room!
-    socket.on('drawing', (data) => broadcastToRoom('drawing', data));
-    socket.on('stamp', (data) => broadcastToRoom('stamp', data));
-    socket.on('text', (data) => broadcastToRoom('text', data));
-    socket.on('image', (data) => broadcastToRoom('image', data));
-    socket.on('clear', () => broadcastToRoom('clear'));
-    socket.on('bgColor', (color) => broadcastToRoom('bgColor', color));
-    socket.on('pointer', (data) => broadcastToRoom('pointer', data));
-    socket.on('undo', () => broadcastToRoom('undo'));
-    socket.on('shape', (data) => broadcastToRoom('shape', data));
-    socket.on('fill', (data) => broadcastToRoom('fill', data));
-    socket.on('template', (data) => broadcastToRoom('template', data));
+    // Chat Event (Now includes the sender's name)
+    socket.on('chatMessage', (data) => {
+        broadcast('chatMessage', { text: data.text, sender: socket.username });
+    });
 
-    // NEW: Broadcast Chat and Sticky Notes securely
-    socket.on('chat', (msg) => broadcastToRoom('chat', msg));
-    socket.on('newNote', (data) => broadcastToRoom('newNote', data));
-    socket.on('moveNote', (data) => broadcastToRoom('moveNote', data));
+    // All other Canvas Tools
+    socket.on('drawing', (data) => broadcast('drawing', data));
+    socket.on('fill', (data) => broadcast('fill', data));
+    socket.on('stamp', (data) => broadcast('stamp', data));
+    socket.on('text', (data) => broadcast('text', data));
+    socket.on('image', (data) => broadcast('image', data));
+    socket.on('clear', () => broadcast('clear'));
+    socket.on('bgColor', (color) => broadcast('bgColor', color));
+    socket.on('pointer', (data) => broadcast('pointer', data));
+    socket.on('undo', () => broadcast('undo'));
+    socket.on('shape', (data) => broadcast('shape', data));
+    socket.on('template', (data) => broadcast('template', data));
+    socket.on('stickyAdd', (data) => broadcast('stickyAdd', data));
+    socket.on('stickyMove', (data) => broadcast('stickyMove', data));
 
-    socket.on('disconnect', () => console.log('An artist disconnected:', socket.id));
+    socket.on('disconnect', () => console.log('An artist disconnected'));
 });
 
 const PORT = process.env.PORT || 3000;
