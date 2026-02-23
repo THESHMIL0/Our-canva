@@ -9,39 +9,37 @@
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #ffffff; font-family: system-ui, sans-serif; transition: background-color 0.3s ease; }
         
-        /* THE PREMIUM PAPER PACK */
-        body.bg-lined { background-image: repeating-linear-gradient(transparent, transparent 29px, #ccc 29px, #ccc 30px); }
-        body.bg-grid { background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px); background-size: 30px 30px; }
-        body.bg-dots { background-image: radial-gradient(#ccc 2px, transparent 2px); background-size: 30px 30px; }
-        body.bg-vintage { background-color: #f4ecd8 !important; background-image: radial-gradient(#d3c5a3 1px, transparent 1px); background-size: 20px 20px; }
-        body.bg-blueprint { background-color: #1a4a76 !important; background-image: linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 30px 30px; }
-        body.bg-kraft { background-color: #dcb68a !important; }
+        /* 🐛 BUG FIX: Papers now use attributes so they don't break Dark Mode! */
+        body[data-paper="bg-lined"] { background-image: repeating-linear-gradient(transparent, transparent 29px, rgba(0,0,0,0.1) 29px, rgba(0,0,0,0.1) 30px); }
+        body[data-paper="bg-grid"] { background-image: linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px); background-size: 30px 30px; }
+        body[data-paper="bg-dots"] { background-image: radial-gradient(rgba(0,0,0,0.2) 2px, transparent 2px); background-size: 30px 30px; }
+        body[data-paper="bg-vintage"] { background-color: #f4ecd8 !important; background-image: radial-gradient(#d3c5a3 1px, transparent 1px); background-size: 20px 20px; }
+        body[data-paper="bg-blueprint"] { background-color: #1a4a76 !important; background-image: linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 30px 30px; }
+        body[data-paper="bg-kraft"] { background-color: #dcb68a !important; }
 
         canvas { display: block; background-color: transparent; position: absolute; top:0; left:0; }
         #scratchBoard { pointer-events: none; z-index: 1; }
         #laserBoard { pointer-events: none; z-index: 2; }
         
-        /* NEW: The Floating Object Layer */
+        /* THE OBJECT LAYER & NEW RESIZE HANDLE */
         #objectLayer { position: absolute; top:0; left:0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
-        .canvas-obj { position: absolute; pointer-events: auto; transform: translate(-50%, -50%); box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid transparent; }
+        .canvas-obj { position: absolute; pointer-events: auto; transform: translate(-50%, -50%); box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid transparent; transform-origin: center center; }
         .canvas-obj.text-obj { padding: 10px; background: transparent; white-space: nowrap; box-shadow: none; text-shadow: 0px 2px 4px rgba(0,0,0,0.3); }
-        .canvas-obj.img-obj { border-radius: 10px; background: white; padding: 10px; padding-bottom: 30px; } /* Polaroid look */
+        .canvas-obj.img-obj { border-radius: 10px; background: white; padding: 10px; padding-bottom: 30px; }
         .canvas-obj.selected { border: 2px dashed #ff4d85; cursor: grab; }
         
-        /* The Delete Button for Objects */
-        .delete-btn { display: none; position: absolute; top: -15px; right: -15px; background: #ff4d85; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; font-size: 16px; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: auto; z-index: 10; }
-        .canvas-obj.selected .delete-btn { display: flex; }
+        .delete-btn { display: none; position: absolute; top: -15px; left: -15px; background: #ff4d85; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: auto; }
+        .resize-btn { display: none; position: absolute; bottom: -15px; right: -15px; background: #4facfe; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-weight: bold; font-size: 18px; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: auto; touch-action: none; }
+        .canvas-obj.selected .delete-btn, .canvas-obj.selected .resize-btn { display: flex; }
 
         /* UI Toolbars */
         .top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 10px; z-index: 10; width:max-content; }
         .bottom-nav { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: flex; gap: 15px; z-index: 11; width: 90%; max-width: 350px; justify-content: space-around; }
         .nav-btn { font-size: 14px; font-weight: bold; padding: 10px; border-radius: 20px; border: none; background: transparent; color: #555; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .nav-btn.active-nav { color: #ff4d85; background: #ffe6ee; }
-        
         .sub-bar { position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; gap: 15px; align-items: center; z-index: 10; max-width: 90%; overflow-x: auto; white-space: nowrap; }
         .sub-bar.show { display: flex; }
         .sub-bar::-webkit-scrollbar { display: none; }
-        
         .tool-group { display: flex; flex-direction: column; align-items: center; font-size: 10px; font-weight: bold; color: #555; gap: 4px; }
         button.tool-btn { padding: 10px; border: none; border-radius: 50%; font-size: 18px; width: 45px; height: 45px; cursor: pointer; background-color: #f0f0f0; box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.1); }
         button.tool-btn:active { transform: scale(0.9); }
@@ -61,12 +59,12 @@
         #shapePicker, #emojiPicker { font-size: 18px; border: none; background: transparent; padding:0; }
         #imageLoader { display: none; }
         #textInput { border: 2px solid #ddd; border-radius: 15px; padding: 5px 10px; width: 90px; font-size: 14px; outline: none; }
-        #partnerPointer { position: absolute; font-size: 24px; pointer-events: none; transition: opacity 0.3s; opacity: 0; z-index: 5; transform: translate(-50%, -100%); }
-
+        
         body.dark-ui .top-bar, body.dark-ui .sub-bar, body.dark-ui .bottom-nav, body.dark-ui .settings-modal, body.dark-ui #chatBox { background: rgba(30, 30, 30, 0.9); color: #fff; }
         body.dark-ui .tool-group, body.dark-ui .setting-row, body.dark-ui .nav-btn { color: #ccc; }
         body.dark-ui button.tool-btn { background-color: #444; color: #fff; }
         body.dark-ui .active-tool, body.dark-ui .active-nav { background-color: #4facfe !important; color:white; }
+        body.dark-ui select { background: #444; color:white; border:none; }
 
         #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffebf0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #loginScreen h1 { color: #ff4d85; margin-bottom: 20px; text-align: center; }
@@ -81,14 +79,13 @@
         #liveChatInputArea { pointer-events: auto; display: flex; gap: 5px; background: rgba(255,255,255,0.3); backdrop-filter: blur(5px); padding: 5px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); }
         #liveChatInput { flex: 1; background: transparent; border: none; outline: none; color: #333; padding: 5px 10px; font-weight: bold; }
         #liveSendBtn { background: #ff4d85; color: white; border-radius: 15px; padding: 5px 15px; font-size: 12px; border:none; }
-
         .love-heart { position: absolute; font-size: 35px; pointer-events: none; z-index: 999; animation: fall 3s linear forwards; }
         @keyframes fall { 0% { transform: translateY(-50px) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg) scale(1.5); opacity: 0; } }
         .ping-ring { position: absolute; border: 4px solid #ff4d85; border-radius: 50%; pointer-events: none; z-index: 8; animation: pingAnim 1.5s ease-out forwards; }
         @keyframes pingAnim { 0% { width: 0; height: 0; transform: translate(-50%, -50%); opacity: 1; } 100% { width: 150px; height: 150px; transform: translate(-50%, -50%); opacity: 0; } }
     </style>
 </head>
-<body>
+<body data-paper="solid">
     <div id="loginScreen">
         <h1>Our Canvas 💖</h1>
         <input type="text" id="usernameInput" class="login-field" placeholder="Your Name...">
@@ -97,8 +94,7 @@
     </div>
 
     <div id="objectLayer"></div>
-    <div id="partnerPointer">👆</div>
-
+    
     <div class="top-bar">
         <button class="tool-btn" id="menuBtn">⚙️</button>
         <button class="tool-btn" id="chatToggleBtn">💬</button>
@@ -126,7 +122,6 @@
             </div>
         </div>
         <div class="setting-row"><span>Dark UI</span><button id="darkModeBtn">🌙 Toggle</button></div>
-        
         <div class="setting-row"><span>Paper</span>
             <select id="bgPatternPicker">
                 <option value="solid">Solid</option>
@@ -138,13 +133,14 @@
                 <option value="bg-kraft">Kraft Card</option>
             </select>
         </div>
-        
-        <div class="setting-row"><span>Color</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
+        <div class="setting-row"><span>Canvas Color</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
         <div class="setting-row"><span>Save PNG</span><button id="saveBtn">💾 Save</button></div>
     </div>
 
     <div class="sub-bar show" id="menu-brushes">
         <div class="tool-group"><span>Color</span><input type="color" id="colorPicker" value="#000000"></div>
+        <div class="tool-group"><span>Copy</span><button class="tool-btn" id="eyedropBtn" style="background:#e3f2fd;">💧</button></div>
+        
         <div class="tool-group"><span>Size</span><input type="range" id="brushSize" min="1" max="50" value="5"></div>
         <div class="tool-group"><span>Fade</span><input type="range" id="brushOpacity" min="1" max="100" value="100"></div>
         <div class="tool-group"><span>Pen</span><button class="tool-btn active-tool" id="penBtn">🖋️</button></div>
@@ -153,7 +149,6 @@
         <div class="tool-group"><span>Neon</span><button class="tool-btn" id="neonBtn">✨</button></div>
         <div class="tool-group"><span>Laser</span><button class="tool-btn" id="laserBtn" style="background:#ffcdd2;">☄️</button></div>
         <div class="tool-group"><span>High</span><button class="tool-btn" id="highlightBtn">🖍️</button></div>
-        <div class="tool-group"><span>Mirror</span><button class="tool-btn" id="mirrorBtn" style="background:#e0f7fa;">🦋</button></div>
     </div>
 
     <div class="sub-bar" id="menu-elements">
@@ -161,7 +156,6 @@
         <div class="tool-group"><span style="visibility:hidden">P</span><select id="emojiPicker"><option value="❤️">❤️</option><option value="⭐">⭐</option><option value="😂">😂</option></select></div>
         <div class="tool-group"><span>Shape</span><button class="tool-btn" id="shapeBtn">🟦</button></div>
         <div class="tool-group"><span style="visibility:hidden">P</span><select id="shapePicker"><option value="rect">Rect</option><option value="circle">Circ</option></select></div>
-        
         <div class="tool-group"><span>Text</span><button class="tool-btn" id="textBtn">🔤</button></div>
         <div class="tool-group"><span>Type</span><input type="text" id="textInput" placeholder="Write here..."></div>
         <div class="tool-group"><span>Font</span>
@@ -176,6 +170,8 @@
     </div>
 
     <div class="sub-bar" id="menu-magic">
+        <div class="tool-group"><span>Mandala</span><button class="tool-btn" id="mandalaBtn" style="background:#f3e5f5;">❄️</button></div>
+        <div class="tool-group"><span>Mirror</span><button class="tool-btn" id="mirrorBtn" style="background:#e0f7fa;">🦋</button></div>
         <div class="tool-group"><span>Radar</span><button class="tool-btn" id="pingBtn" style="background:#ffc0cb;">🎯</button></div>
         <div class="tool-group"><span>Foil</span><button class="tool-btn" id="foilBtn" style="background:#e0e0e0;">🪙</button></div>
         <div class="tool-group"><span>Scratch</span><button class="tool-btn" id="scratchBtn" style="background:#bcaaa4;">⛏️</button></div>
@@ -200,24 +196,11 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io(); let myName = "Artist";
-        
         socket.on('connect', () => { if (document.getElementById('loginScreen').style.display === 'none') { socket.emit('joinRoom', { roomCode: 'kushu', username: myName }); } });
 
-        function switchNav(menuId, btnElem) {
-            document.querySelectorAll('.sub-bar').forEach(bar => bar.classList.remove('show'));
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav'));
-            document.getElementById(menuId).classList.add('show'); btnElem.classList.add('active-nav');
-        }
+        function switchNav(menuId, btnElem) { document.querySelectorAll('.sub-bar').forEach(bar => bar.classList.remove('show')); document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-nav')); document.getElementById(menuId).classList.add('show'); btnElem.classList.add('active-nav'); }
+        document.getElementById('loginBtn').addEventListener('click', () => { if (document.getElementById('loginInput').value.toLowerCase() === 'kushu') { myName = document.getElementById('usernameInput').value.trim() || "Artist"; document.getElementById('loginScreen').style.display = 'none'; socket.emit('joinRoom', { roomCode: 'kushu', username: myName }); } else alert("Wrong password! Hint: it's kushu 😸"); });
 
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            if (document.getElementById('loginInput').value.toLowerCase() === 'kushu') {
-                myName = document.getElementById('usernameInput').value.trim() || "Artist";
-                document.getElementById('loginScreen').style.display = 'none';
-                socket.emit('joinRoom', { roomCode: 'kushu', username: myName });
-            } else alert("Wrong password! Hint: it's kushu 😸");
-        });
-
-        // Chat & Ping & Love Bomb...
         const liveChatContainer = document.getElementById('liveChatContainer');
         document.getElementById('chatToggleBtn').addEventListener('click', () => liveChatContainer.style.display = liveChatContainer.style.display === 'none' ? 'flex' : 'none');
         function addLiveMessage(text, sender) { const msgEl = document.createElement('div'); msgEl.className = 'live-msg'; msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`; document.getElementById('liveChatMessages').appendChild(msgEl); document.getElementById('liveChatMessages').scrollTop = document.getElementById('liveChatMessages').scrollHeight; setTimeout(() => { msgEl.classList.add('fade-out'); setTimeout(() => msgEl.remove(), 1000); }, 7000); }
@@ -229,123 +212,141 @@
         function triggerPing(x, y, emit) { const ping = document.createElement('div'); ping.className = 'ping-ring'; ping.style.left = x + 'px'; ping.style.top = y + 'px'; document.body.appendChild(ping); setTimeout(() => ping.remove(), 1500); if(emit) socket.emit('pingRadar', {x, y}); }
         socket.on('pingRadar', (data) => triggerPing(data.x, data.y, false));
 
-        // 🖼️ NEW: THE OBJECT ENGINE (Draggable Text & Photos)
+        // 🖼️ UPDATED OBJECT ENGINE: Now With Resizing!
         const objLayer = document.getElementById('objectLayer');
         
         function createObject(id, type, content, x, y, options, emit) {
             const el = document.createElement(type === 'img' ? 'img' : 'div');
-            el.id = id;
-            el.className = `canvas-obj ${type}-obj`;
+            el.id = id; el.className = `canvas-obj ${type}-obj`;
             el.style.left = x + 'px'; el.style.top = y + 'px';
+            el.dataset.scale = options.scale || 1;
+            el.style.transform = `translate(-50%, -50%) scale(${el.dataset.scale})`;
             
-            if (type === 'text') {
-                el.innerText = content;
-                el.style.color = options.color;
-                el.style.fontFamily = options.font;
-                el.style.fontSize = options.size + 'px';
-                if(options.bg) el.style.background = options.bg; // For sticky notes
-            } else if (type === 'img') {
-                el.src = content;
-                el.style.width = options.width + 'px';
+            if (type === 'text') { el.innerText = content; el.style.color = options.color; el.style.fontFamily = options.font; el.style.fontSize = options.size + 'px'; } 
+            else if (type === 'img') { el.src = content; el.style.width = options.width + 'px'; }
+
+            // Delete Button
+            const delBtn = document.createElement('button'); delBtn.className = 'delete-btn'; delBtn.innerText = '✕';
+            delBtn.onclick = (e) => { e.stopPropagation(); el.remove(); socket.emit('deleteObj', id); };
+            
+            // Resize Button ⤡
+            const resBtn = document.createElement('button'); resBtn.className = 'resize-btn'; resBtn.innerText = '⤡';
+            
+            if(type !== 'img') { el.appendChild(delBtn); el.appendChild(resBtn); } 
+            else { /* Images handled via wrapper if needed, or simplify by wrapping img in div */
+                const wrapper = document.createElement('div'); wrapper.className = 'canvas-obj img-obj';
+                wrapper.id = id; wrapper.style.left = x + 'px'; wrapper.style.top = y + 'px';
+                wrapper.dataset.scale = el.dataset.scale; wrapper.style.transform = el.style.transform;
+                el.className = ''; el.style.position='relative'; el.style.transform='none';
+                wrapper.appendChild(el); wrapper.appendChild(delBtn); wrapper.appendChild(resBtn);
+                objLayer.appendChild(wrapper);
+                setupInteractions(wrapper, id, resBtn); return;
             }
 
-            // The Delete Button
-            const delBtn = document.createElement('button');
-            delBtn.className = 'delete-btn'; delBtn.innerText = '✕';
-            delBtn.onclick = (e) => { e.stopPropagation(); el.remove(); socket.emit('deleteObj', id); };
-            if(type !== 'img') el.appendChild(delBtn); // Images can't have children, we handle it below for images if needed, or just let users delete by selecting text.
-
             objLayer.appendChild(el);
+            setupInteractions(el, id, resBtn);
+            if(emit) socket.emit('addObj', {id, type, content, x, y, options});
+        }
 
-            // Make it draggable!
-            let isDraggingObj = false, offsetX, offsetY;
+        function setupInteractions(el, id, resBtn) {
+            let isDraggingObj = false, isResizing = false, offsetX, offsetY, startY, startScale;
             
+            // Drag Logic
             el.addEventListener('touchstart', (e) => {
-                e.stopPropagation(); // Stop drawing on canvas!
-                document.querySelectorAll('.canvas-obj').forEach(o => o.classList.remove('selected'));
-                el.classList.add('selected');
-                isDraggingObj = true;
-                const touch = e.touches[0];
-                offsetX = touch.clientX - el.offsetLeft; offsetY = touch.clientY - el.offsetTop;
+                if(e.target === resBtn) return; // Let resize handle it
+                e.stopPropagation(); document.querySelectorAll('.canvas-obj').forEach(o => o.classList.remove('selected')); el.classList.add('selected');
+                isDraggingObj = true; const touch = e.touches[0]; offsetX = touch.clientX - el.offsetLeft; offsetY = touch.clientY - el.offsetTop;
             }, {passive: false});
 
             el.addEventListener('touchmove', (e) => {
                 if(!isDraggingObj) return; e.preventDefault(); e.stopPropagation();
-                const touch = e.touches[0];
-                const nx = touch.clientX - offsetX, ny = touch.clientY - offsetY;
-                el.style.left = nx + 'px'; el.style.top = ny + 'px';
-                socket.emit('moveObj', {id, x: nx, y: ny}); // Sync real-time!
+                const touch = e.touches[0]; const nx = touch.clientX - offsetX, ny = touch.clientY - offsetY;
+                el.style.left = nx + 'px'; el.style.top = ny + 'px'; socket.emit('moveObj', {id, x: nx, y: ny}); 
             }, {passive: false});
 
             el.addEventListener('touchend', (e) => { e.stopPropagation(); isDraggingObj = false; });
 
-            if(emit) socket.emit('addObj', {id, type, content, x, y, options});
+            // ⤡ Resize Logic (Drag down to enlarge, up to shrink)
+            resBtn.addEventListener('touchstart', (e) => {
+                e.stopPropagation(); isResizing = true;
+                startY = e.touches[0].clientY; startScale = parseFloat(el.dataset.scale);
+            }, {passive: false});
+
+            resBtn.addEventListener('touchmove', (e) => {
+                if(!isResizing) return; e.preventDefault(); e.stopPropagation();
+                const dy = e.touches[0].clientY - startY;
+                const newScale = Math.max(0.2, startScale + dy * 0.01); // 0.01 controls sensitivity
+                el.dataset.scale = newScale;
+                el.style.transform = `translate(-50%, -50%) scale(${newScale})`;
+                socket.emit('scaleObj', {id, scale: newScale});
+            }, {passive: false});
+
+            resBtn.addEventListener('touchend', (e) => { e.stopPropagation(); isResizing = false; });
         }
 
-        // Click background to deselect objects
         document.body.addEventListener('touchstart', (e) => {
-            if(!e.target.classList.contains('canvas-obj') && !e.target.classList.contains('delete-btn')) {
-                document.querySelectorAll('.canvas-obj').forEach(o => o.classList.remove('selected'));
-            }
+            if(!e.target.closest('.canvas-obj')) document.querySelectorAll('.canvas-obj').forEach(o => o.classList.remove('selected'));
         });
 
-        // Socket listeners for objects
-        socket.on('addObj', (data) => createObject(data.id, data.type, data.content, data.x, data.y, data.options, false));
-        socket.on('moveObj', (data) => { const el = document.getElementById(data.id); if(el) { el.style.left = data.x + 'px'; el.style.top = data.y + 'px'; } });
+        socket.on('addObj', (d) => createObject(d.id, d.type, d.content, d.x, d.y, d.options, false));
+        socket.on('moveObj', (d) => { const el = document.getElementById(d.id); if(el) { el.style.left = d.x + 'px'; el.style.top = d.y + 'px'; } });
+        socket.on('scaleObj', (d) => { const el = document.getElementById(d.id); if(el) { el.dataset.scale = d.scale; el.style.transform = `translate(-50%, -50%) scale(${d.scale})`; } });
         socket.on('deleteObj', (id) => { const el = document.getElementById(id); if(el) el.remove(); });
-        socket.on('clear', () => { objLayer.innerHTML = ''; }); // Clear objects when trash is clicked!
         const canvas = document.getElementById('drawingBoard'); const ctx = canvas.getContext('2d');
         const scratchBoard = document.getElementById('scratchBoard'); const ctxScratch = scratchBoard.getContext('2d');
         const laserBoard = document.getElementById('laserBoard'); const ctxLaser = laserBoard.getContext('2d');
         
         function resizeCanvas() { const w = window.innerWidth, h = window.innerHeight; canvas.width = w; canvas.height = h; scratchBoard.width = w; scratchBoard.height = h; laserBoard.width = w; laserBoard.height = h; }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
-
         setInterval(() => { ctxLaser.fillStyle = "rgba(0,0,0,0.1)"; ctxLaser.globalCompositeOperation = "destination-out"; ctxLaser.fillRect(0, 0, laserBoard.width, laserBoard.height); ctxLaser.globalCompositeOperation = "source-over"; }, 50);
 
         let isDrawing = false, currentX = 0, currentY = 0;
-        let isEraser=false, isStamping=false, isTextMode=false, isHighlight=false, isNeon=false, isShapeMode=false, isFillMode=false, isMagicMode=false, isMirrorMode=false, isLaserMode=false, isRainbow=false, isStardust=false, isPingMode=false, isScratchMode=false;
+        let isEraser=false, isStamping=false, isTextMode=false, isHighlight=false, isNeon=false, isShapeMode=false, isFillMode=false, isMagicMode=false, isMirrorMode=false, isLaserMode=false, isRainbow=false, isStardust=false, isPingMode=false, isScratchMode=false, isEyedropper=false, isMandala=false;
         let rainbowHue = 0; let stardustDistance = 0; let lastPointerEmit = 0; 
 
-        const toolBtns = ['penBtn','rainbowBtn','stardustBtn','laserBtn','highlightBtn','neonBtn','mirrorBtn','stampBtn','shapeBtn','textBtn','pingBtn','scratchBtn','magicBtn','fillBtn','eraserBtn'];
-        function resetTools() { isEraser=isStamping=isTextMode=isHighlight=isNeon=isShapeMode=isFillMode=isMagicMode=isMirrorMode=isLaserMode=isRainbow=isStardust=isPingMode=isScratchMode=false; toolBtns.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active-tool'); }); }
+        const toolBtns = ['penBtn','rainbowBtn','stardustBtn','laserBtn','highlightBtn','neonBtn','mirrorBtn','mandalaBtn','stampBtn','shapeBtn','textBtn','pingBtn','scratchBtn','magicBtn','fillBtn','eraserBtn','eyedropBtn'];
+        function resetTools() { isEraser=isStamping=isTextMode=isHighlight=isNeon=isShapeMode=isFillMode=isMagicMode=isMirrorMode=isLaserMode=isRainbow=isStardust=isPingMode=isScratchMode=isEyedropper=isMandala=false; toolBtns.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active-tool'); }); }
         const mapBtn = (id, flagSetter) => { const el = document.getElementById(id); if(el) el.addEventListener('click', () => { resetTools(); flagSetter(); el.classList.add('active-tool'); }); };
         
-        mapBtn('penBtn', () => {}); mapBtn('eraserBtn', () => isEraser = true); mapBtn('rainbowBtn', () => isRainbow = true); mapBtn('stardustBtn', () => isStardust = true); mapBtn('laserBtn', () => isLaserMode = true); mapBtn('highlightBtn', () => isHighlight = true); mapBtn('neonBtn', () => isNeon = true); mapBtn('mirrorBtn', () => isMirrorMode = true); mapBtn('stampBtn', () => isStamping = true); mapBtn('shapeBtn', () => isShapeMode = true); mapBtn('pingBtn', () => isPingMode = true); mapBtn('scratchBtn', () => isScratchMode = true); mapBtn('magicBtn', () => isMagicMode = true); mapBtn('fillBtn', () => isFillMode = true);
+        mapBtn('penBtn', () => {}); mapBtn('eraserBtn', () => isEraser = true); mapBtn('rainbowBtn', () => isRainbow = true); mapBtn('stardustBtn', () => isStardust = true); mapBtn('laserBtn', () => isLaserMode = true); mapBtn('highlightBtn', () => isHighlight = true); mapBtn('neonBtn', () => isNeon = true); mapBtn('mirrorBtn', () => isMirrorMode = true); mapBtn('mandalaBtn', () => isMandala = true); mapBtn('stampBtn', () => isStamping = true); mapBtn('shapeBtn', () => isShapeMode = true); mapBtn('textBtn', () => isTextMode = true); mapBtn('pingBtn', () => isPingMode = true); mapBtn('scratchBtn', () => isScratchMode = true); mapBtn('magicBtn', () => isMagicMode = true); mapBtn('fillBtn', () => isFillMode = true); mapBtn('eyedropBtn', () => isEyedropper = true);
         
-        // When clicking Text Tool, active it!
-        mapBtn('textBtn', () => isTextMode = true); 
-
         function applyFoil(emit) { ctxScratch.fillStyle = "#C0C0C0"; ctxScratch.fillRect(0, 0, scratchBoard.width, scratchBoard.height); if(emit) socket.emit('foil'); }
         document.getElementById('foilBtn').addEventListener('click', () => applyFoil(true)); socket.on('foil', () => applyFoil(false));
         function eraseFoil(x, y, size, emit) { ctxScratch.globalCompositeOperation = 'destination-out'; ctxScratch.beginPath(); ctxScratch.arc(x, y, size * 2, 0, Math.PI * 2); ctxScratch.fill(); ctxScratch.closePath(); ctxScratch.globalCompositeOperation = 'source-over'; if(emit) socket.emit('scratch', {x,y,size}); }
         socket.on('scratch', (d) => eraseFoil(d.x, d.y, d.size, false));
 
         function getTouchPos(e) { const rect = canvas.getBoundingClientRect(); return { x: Math.floor(e.touches[0].clientX - rect.left), y: Math.floor(e.touches[0].clientY - rect.top) }; }
-        
+        let isDraggingItem = false, dragType = '', dragData = {}, savedImageData = null, lastX = 0, lastY = 0;
+
         canvas.addEventListener('touchstart', (e) => {
             if(e.target === canvas) { e.preventDefault(); document.getElementById('settingsMenu').classList.remove('show'); } 
-            const pos = getTouchPos(e); currentX = pos.x; currentY = pos.y; 
+            const pos = getTouchPos(e); lastX = pos.x; lastY = pos.y; currentX = pos.x; currentY = pos.y; 
             socket.emit('pointer', {x: pos.x, y: pos.y});
             
+            // 💧 EYEDROPPER LOGIC
+            if (isEyedropper) {
+                const px = ctx.getImageData(pos.x, pos.y, 1, 1).data;
+                if (px[3] > 0) { // If pixel is not transparent
+                    const hex = "#" + [...px].slice(0,3).map(x=>x.toString(16).padStart(2,'0')).join('');
+                    document.getElementById('colorPicker').value = hex;
+                }
+                resetTools(); document.getElementById('penBtn').classList.add('active-tool'); return;
+            }
+
             if (isPingMode) { triggerPing(pos.x, pos.y, true); return; }
             if (isScratchMode) { eraseFoil(pos.x, pos.y, brushSize.value, true); isDrawing = true; return; }
             if (isFillMode) return; 
             
-            // 🚀 NEW: Click the screen to spawn FLOATING Text!
             if (isTextMode) {
-                const txt = document.getElementById('textInput').value;
-                if (!txt) return;
-                const id = 'txt_' + Date.now();
-                createObject(id, 'text', txt, pos.x, pos.y, {
-                    color: document.getElementById('colorPicker').value,
-                    font: document.getElementById('fontPicker').value,
-                    size: document.getElementById('brushSize').value * 4
-                }, true);
-                return;
+                const txt = document.getElementById('textInput').value; if (!txt) return;
+                createObject('txt_' + Date.now(), 'text', txt, pos.x, pos.y, { color: document.getElementById('colorPicker').value, font: document.getElementById('fontPicker').value, size: document.getElementById('brushSize').value * 4, scale: 1 }, true); return;
             }
-
-            if (isStamping || isShapeMode) { /* Kept old logic for stamps/shapes for performance */ }
+            if (isStamping || isShapeMode) {
+                isDraggingItem = true; dragType = isShapeMode ? 'shape' : 'stamp'; savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                if (isStamping) dragData = { emoji: document.getElementById('emojiPicker').value, size: document.getElementById('brushSize').value * 4, alpha: document.getElementById('brushOpacity').value / 100 };
+                else dragData = { type: document.getElementById('shapePicker').value, color: document.getElementById('colorPicker').value, size: document.getElementById('brushSize').value, neon: isNeon };
+                return; 
+            }
             isDrawing = true; 
         }, { passive: false });
 
@@ -353,6 +354,12 @@
             if(e.target === canvas) e.preventDefault();
             const pos = getTouchPos(e); 
             if (Date.now() - lastPointerEmit > 50) { socket.emit('pointer', {x: pos.x, y: pos.y}); lastPointerEmit = Date.now(); }
+
+            if (isDraggingItem) {
+                ctx.putImageData(savedImageData, 0, 0); 
+                if (dragType === 'stamp') drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false, dragData.alpha); else if (dragType === 'shape') drawShape(dragData.type, currentX, currentY, pos.x, pos.y, dragData.color, dragData.size, false, dragData.neon);
+                lastX = pos.x; lastY = pos.y; return;
+            }
             if (!isDrawing) return;
             if (isScratchMode) { eraseFoil(pos.x, pos.y, brushSize.value, true); return; }
 
@@ -366,28 +373,40 @@
 
             const alpha = isHighlight ? 0.3 : (document.getElementById('brushOpacity').value / 100);
             ctx.globalCompositeOperation = isEraser ? 'destination-out' : (isMagicMode ? 'destination-over' : 'source-over'); ctx.globalAlpha = alpha; 
+            
             drawLine(currentX, currentY, pos.x, pos.y, activeColor, brushSize.value, true, isEraser, isHighlight, isNeon, isMagicMode, isLaserMode, alpha);
+            
             if (isMirrorMode && !isEraser && !isMagicMode && !isLaserMode) { drawLine(canvas.width - currentX, currentY, canvas.width - pos.x, pos.y, activeColor, brushSize.value, true, false, isHighlight, isNeon, false, false, alpha); }
+            
+            // ❄️ NEW: MANDALA KALEIDOSCOPE!
+            if (isMandala && !isEraser && !isMagicMode && !isLaserMode) {
+                const cx = canvas.width / 2, cy = canvas.height / 2;
+                const dx0 = currentX - cx, dy0 = currentY - cy, dx1 = pos.x - cx, dy1 = pos.y - cy;
+                for (let i = 1; i < 8; i++) {
+                    const angle = i * Math.PI / 4; const cos = Math.cos(angle), sin = Math.sin(angle);
+                    drawLine(cx + dx0*cos - dy0*sin, cy + dx0*sin + dy0*cos, cx + dx1*cos - dy1*sin, cy + dx1*sin + dy1*cos, activeColor, brushSize.value, true, false, isHighlight, isNeon, false, false, alpha);
+                }
+            }
+
             currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
-        canvas.addEventListener('touchend', () => { isDrawing = false; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; });
+        canvas.addEventListener('touchend', () => {
+            if (isDraggingItem) { isDraggingItem = false; if (dragType === 'stamp') socket.emit('stamp', { emoji: dragData.emoji, x: lastX, y: lastY, size: dragData.size, alpha: dragData.alpha }); else if (dragType === 'shape') socket.emit('shape', { type: dragData.type, x0: currentX, y0: currentY, x1: lastX, y1: lastY, color: dragData.color, size: dragData.size, neon: dragData.neon }); return; }
+            isDrawing = false; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
+        });
 
         function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon, magic, laser, alpha) { const activeCtx = laser ? ctxLaser : ctx; activeCtx.beginPath(); activeCtx.moveTo(x0, y0); activeCtx.lineTo(x1, y1); activeCtx.strokeStyle = color; activeCtx.lineWidth = size; activeCtx.lineCap = 'round'; if (neon || laser) { activeCtx.shadowBlur = size * 2; activeCtx.shadowColor = color; } else { activeCtx.shadowBlur = 0; } activeCtx.stroke(); activeCtx.closePath(); activeCtx.shadowBlur = 0; if (emit) socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon, magic, laser, alpha }); }
         socket.on('drawing', (data) => { const activeCtx = data.laser ? ctxLaser : ctx; activeCtx.globalCompositeOperation = data.erasing ? 'destination-out' : (data.magic ? 'destination-over' : 'source-over'); activeCtx.globalAlpha = data.alpha || 1.0; drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon, data.magic, data.laser, data.alpha); activeCtx.globalCompositeOperation = 'source-over'; activeCtx.globalAlpha = 1.0; activeCtx.shadowBlur = 0; });
         function drawStamp(x, y, emoji, size, emit, alpha) { ctx.globalAlpha = alpha || 1.0; ctx.font = `${size}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, x, y); ctx.globalAlpha = 1.0; if (emit) socket.emit('stamp', { x, y, emoji, size, alpha }); } socket.on('stamp', (d) => drawStamp(d.x, d.y, d.emoji, d.size, false, d.alpha));
-        
-        document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('settingsMenu').classList.toggle('show'));
+        function drawShape(t, x0, y0, x1, y1, c, s, emit, n) { ctx.beginPath(); ctx.strokeStyle = c; ctx.lineWidth = s; ctx.lineCap = 'round'; if(n) {ctx.shadowBlur = s*2; ctx.shadowColor=c;} if (t === 'rect') ctx.rect(x0, y0, x1 - x0, y1 - y0); else if (t === 'circle') ctx.arc(x0, y0, Math.hypot(x1 - x0, y1 - y0), 0, 2 * Math.PI); else if (t === 'line') { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke(); ctx.closePath(); ctx.shadowBlur=0; if (emit) socket.emit('shape', { type: t, x0, y0, x1, y1, color: c, size: s, neon: n }); } socket.on('shape', (d) => drawShape(d.type, d.x0, d.y0, d.x1, d.y1, d.color, d.size, false, d.neon));
+
+        // BUG FIX: Papers now use attributes so they don't break Dark Mode!
+        document.getElementById('bgPatternPicker').addEventListener('change', (e) => { const val = e.target.value; document.body.setAttribute('data-paper', val); socket.emit('bgPattern', val); });
+        socket.on('bgPattern', (val) => { document.body.setAttribute('data-paper', val); document.getElementById('bgPatternPicker').value = val; });
         document.getElementById('darkModeBtn').addEventListener('click', () => document.body.classList.toggle('dark-ui'));
         
-        // NEW PAPER BACKGROUND LOGIC!
-        document.getElementById('bgPatternPicker').addEventListener('change', (e) => {
-            const val = e.target.value; document.body.className = ''; 
-            if(val !== 'solid') document.body.classList.add(val);
-            socket.emit('bgPattern', val);
-        });
-        socket.on('bgPattern', (val) => { document.body.className = ''; if(val !== 'solid') document.body.classList.add(val); document.getElementById('bgPatternPicker').value = val; });
-        
+        document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('settingsMenu').classList.toggle('show'));
         document.getElementById('bgColorPicker').addEventListener('input', (e) => { document.body.style.backgroundColor = e.target.value; socket.emit('bgColor', e.target.value); });
         socket.on('bgColor', (color) => { document.getElementById('bgColorPicker').value = color; document.body.style.backgroundColor = color; });
         
@@ -397,22 +416,10 @@
         document.getElementById('undoBtn').addEventListener('click', () => performUndo(true)); socket.on('undo', () => performUndo(false));
         document.getElementById('clearBtn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctxScratch.clearRect(0,0,scratchBoard.width,scratchBoard.height); objLayer.innerHTML=''; socket.emit('clear'); }); socket.on('clear', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctxScratch.clearRect(0,0,scratchBoard.width,scratchBoard.height); objLayer.innerHTML=''; });
 
-        // 🖼️ NEW: Image Uploader creates a FLOATING photo!
-        document.getElementById('imageLoader').addEventListener('change', function(e) { 
-            const reader = new FileReader(); reader.onload = function(event) { 
-                const img = new Image(); img.onload = function() { 
-                    const maxDim = window.innerWidth * 0.6; let scale = 1; if (img.width > maxDim) scale = maxDim / img.width; 
-                    const w = img.width * scale; 
-                    const id = 'img_' + Date.now();
-                    
-                    // Compress and spawn floating object!
-                    const tempC = document.createElement('canvas'); tempC.width = w; tempC.height = img.height * scale; 
-                    tempC.getContext('2d').drawImage(img, 0, 0, w, tempC.height);
-                    createObject(id, 'img', tempC.toDataURL('image/jpeg', 0.8), window.innerWidth/2, window.innerHeight/2, {width: w}, true);
-                }; img.src = event.target.result; 
-            }; if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]); 
-        }, false);
-
+        document.getElementById('imageLoader').addEventListener('change', function(e) { const reader = new FileReader(); reader.onload = function(event) { const img = new Image(); img.onload = function() { const maxDim = window.innerWidth * 0.6; let scale = 1; if (img.width > maxDim) scale = maxDim / img.width; const w = img.width * scale; createObject('img_' + Date.now(), 'img', tempC.toDataURL('image/jpeg', 0.8), window.innerWidth/2, window.innerHeight/2, {width: w, scale: 1}, true); }; 
+            const tempC = document.createElement('canvas'); const tCtx = tempC.getContext('2d');
+            img.src = event.target.result; img.onload = () => { let scale = Math.min(window.innerWidth * 0.6 / img.width, 1); tempC.width = img.width * scale; tempC.height = img.height * scale; tCtx.drawImage(img, 0, 0, tempC.width, tempC.height); createObject('img_' + Date.now(), 'img', tempC.toDataURL('image/jpeg', 0.8), window.innerWidth/2, window.innerHeight/2, {width: tempC.width, scale: 1}, true); }
+        }; if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]); }, false);
     </script>
 </body>
 </html>
