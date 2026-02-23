@@ -8,7 +8,6 @@
     <meta name="theme-color" content="#ffffff">
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #ffffff; font-family: system-ui, sans-serif; transition: background-color 0.3s ease; }
-        
         body.bg-lined { background-image: repeating-linear-gradient(transparent, transparent 29px, #ccc 29px, #ccc 30px); }
         body.bg-grid { background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px); background-size: 30px 30px; }
         body.bg-dots { background-image: radial-gradient(#ccc 2px, transparent 2px); background-size: 30px 30px; }
@@ -17,15 +16,11 @@
         #scratchBoard { pointer-events: none; z-index: 1; }
         #laserBoard { pointer-events: none; z-index: 2; }
         
-        /* Navbars */
         .top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 20px; z-index: 10; }
-        
-        /* NEW: Main Bottom Category Bar */
         .bottom-nav { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: flex; gap: 15px; z-index: 11; width: 90%; max-width: 350px; justify-content: space-around; }
         .nav-btn { font-size: 14px; font-weight: bold; padding: 10px; border-radius: 20px; border: none; background: transparent; color: #555; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .nav-btn.active-nav { color: #ff4d85; background: #ffe6ee; }
         
-        /* NEW: Sub-menus for tools */
         .sub-bar { position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 12px 20px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; gap: 15px; align-items: center; z-index: 10; max-width: 90%; overflow-x: auto; white-space: nowrap; }
         .sub-bar.show { display: flex; }
         .sub-bar::-webkit-scrollbar { display: none; }
@@ -35,7 +30,6 @@
         button.tool-btn:active { transform: scale(0.9); }
         .active-tool { background-color: #333 !important; color: white !important; box-shadow: 0 0 10px rgba(0,0,0,0.3) !important; }
         
-        /* Misc UI */
         .settings-modal { display: none; position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); padding: 20px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 20; flex-direction: column; gap: 15px; min-width: 200px; }
         .settings-modal.show { display: flex; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; font-weight: bold; color: #333; font-size: 14px; gap: 10px; }
@@ -52,7 +46,6 @@
         #textInput { border: 2px solid #ddd; border-radius: 15px; padding: 5px 10px; width: 90px; font-size: 14px; outline: none; }
         #partnerPointer { position: absolute; font-size: 24px; pointer-events: none; transition: opacity 0.3s; opacity: 0; z-index: 5; transform: translate(-50%, -100%); }
 
-        /* Dark Mode */
         body.dark-ui .top-bar, body.dark-ui .sub-bar, body.dark-ui .bottom-nav, body.dark-ui .settings-modal, body.dark-ui #chatBox { background: rgba(30, 30, 30, 0.9); color: #fff; }
         body.dark-ui .tool-group, body.dark-ui .setting-row, body.dark-ui .nav-btn { color: #ccc; }
         body.dark-ui button.tool-btn { background-color: #444; color: #fff; }
@@ -78,7 +71,6 @@
         .love-heart { position: absolute; font-size: 35px; pointer-events: none; z-index: 999; animation: fall 3s linear forwards; }
         @keyframes fall { 0% { transform: translateY(-50px) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg) scale(1.5); opacity: 0; } }
 
-        /* NEW: Radar Ping Animation */
         .ping-ring { position: absolute; border: 4px solid #ff4d85; border-radius: 50%; pointer-events: none; z-index: 8; animation: pingAnim 1.5s ease-out forwards; }
         @keyframes pingAnim { 0% { width: 0; height: 0; transform: translate(-50%, -50%); opacity: 1; } 100% { width: 150px; height: 150px; transform: translate(-50%, -50%); opacity: 0; } }
     </style>
@@ -173,11 +165,17 @@
     <canvas id="drawingBoard"></canvas>
     <canvas id="scratchBoard"></canvas>
     <canvas id="laserBoard"></canvas>
-    
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io(); let myName = "Artist";
         
+        // 🐛 BUG FIX: Reconnect to room if phone sleeps!
+        socket.on('connect', () => {
+            if (document.getElementById('loginScreen').style.display === 'none') {
+                socket.emit('joinRoom', { roomCode: 'kushu', username: myName });
+            }
+        });
+
         // Navigation Logic
         function switchNav(menuId, btnElem) {
             document.querySelectorAll('.sub-bar').forEach(bar => bar.classList.remove('show'));
@@ -194,7 +192,6 @@
             } else alert("Wrong password! Hint: it's kushu 😸");
         });
 
-        // Chat & Love Bomb
         const liveChatContainer = document.getElementById('liveChatContainer');
         document.getElementById('chatToggleBtn').addEventListener('click', () => liveChatContainer.style.display = liveChatContainer.style.display === 'none' ? 'flex' : 'none');
         function addLiveMessage(text, sender) {
@@ -216,80 +213,37 @@
         }
         document.getElementById('loveBombBtn').addEventListener('click', () => triggerLoveBomb(true)); socket.on('loveBomb', () => triggerLoveBomb(false));
 
-        // NEW: Radar Ping Animation
         function triggerPing(x, y, emit) {
             const ping = document.createElement('div'); ping.className = 'ping-ring';
-            ping.style.left = x + 'px'; ping.style.top = y + 'px';
-            document.body.appendChild(ping);
-            setTimeout(() => ping.remove(), 1500);
-            if(emit) socket.emit('pingRadar', {x, y});
+            ping.style.left = x + 'px'; ping.style.top = y + 'px'; document.body.appendChild(ping);
+            setTimeout(() => ping.remove(), 1500); if(emit) socket.emit('pingRadar', {x, y});
         }
         socket.on('pingRadar', (data) => triggerPing(data.x, data.y, false));
 
-        // Setup All 3 Canvases
         const canvas = document.getElementById('drawingBoard'); const ctx = canvas.getContext('2d');
         const scratchBoard = document.getElementById('scratchBoard'); const ctxScratch = scratchBoard.getContext('2d');
         const laserBoard = document.getElementById('laserBoard'); const ctxLaser = laserBoard.getContext('2d');
         
         function resizeCanvas() { 
             const w = window.innerWidth, h = window.innerHeight;
-            canvas.width = w; canvas.height = h; 
-            scratchBoard.width = w; scratchBoard.height = h; 
-            laserBoard.width = w; laserBoard.height = h; 
+            canvas.width = w; canvas.height = h; scratchBoard.width = w; scratchBoard.height = h; laserBoard.width = w; laserBoard.height = h; 
         }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
-        setInterval(() => {
-            ctxLaser.fillStyle = "rgba(0,0,0,0.1)"; ctxLaser.globalCompositeOperation = "destination-out";
-            ctxLaser.fillRect(0, 0, laserBoard.width, laserBoard.height); ctxLaser.globalCompositeOperation = "source-over";
-        }, 50);
+        setInterval(() => { ctxLaser.fillStyle = "rgba(0,0,0,0.1)"; ctxLaser.globalCompositeOperation = "destination-out"; ctxLaser.fillRect(0, 0, laserBoard.width, laserBoard.height); ctxLaser.globalCompositeOperation = "source-over"; }, 50);
 
-        // State Tracking
         let isDrawing = false, currentX = 0, currentY = 0;
         let isEraser=false, isStamping=false, isTextMode=false, isHighlight=false, isNeon=false, isShapeMode=false, isFillMode=false, isMagicMode=false, isMirrorMode=false, isStickyMode=false, isLaserMode=false, isRainbow=false, isStardust=false, isPingMode=false, isScratchMode=false;
-        let rainbowHue = 0; // For rainbow pen
-        let stardustDistance = 0; // For spacing stardust emojis
+        let rainbowHue = 0; let stardustDistance = 0; 
         const toolBtns = ['penBtn','rainbowBtn','stardustBtn','laserBtn','highlightBtn','neonBtn','mirrorBtn','stampBtn','shapeBtn','textBtn','imageBtn','stickyBtn','pingBtn','scratchBtn','magicBtn','fillBtn','eraserBtn'];
-
-        function resetTools() {
-            isEraser=isStamping=isTextMode=isHighlight=isNeon=isShapeMode=isFillMode=isMagicMode=isMirrorMode=isStickyMode=isLaserMode=isRainbow=isStardust=isPingMode=isScratchMode=false;
-            toolBtns.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active-tool'); });
-        }
-
+        function resetTools() { isEraser=isStamping=isTextMode=isHighlight=isNeon=isShapeMode=isFillMode=isMagicMode=isMirrorMode=isStickyMode=isLaserMode=isRainbow=isStardust=isPingMode=isScratchMode=false; toolBtns.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active-tool'); }); }
         const mapBtn = (id, flagSetter) => { const el = document.getElementById(id); if(el) el.addEventListener('click', () => { resetTools(); flagSetter(); el.classList.add('active-tool'); }); };
-        mapBtn('penBtn', () => {}); // Default pen
-        mapBtn('eraserBtn', () => isEraser = true);
-        mapBtn('rainbowBtn', () => isRainbow = true);
-        mapBtn('stardustBtn', () => isStardust = true);
-        mapBtn('laserBtn', () => isLaserMode = true);
-        mapBtn('highlightBtn', () => isHighlight = true);
-        mapBtn('neonBtn', () => isNeon = true);
-        mapBtn('mirrorBtn', () => isMirrorMode = true);
-        mapBtn('stampBtn', () => isStamping = true);
-        mapBtn('shapeBtn', () => isShapeMode = true);
-        mapBtn('textBtn', () => isTextMode = true);
-        mapBtn('stickyBtn', () => isStickyMode = true);
-        mapBtn('pingBtn', () => isPingMode = true);
-        mapBtn('scratchBtn', () => isScratchMode = true); // 🪙 Coin Tool
-        mapBtn('magicBtn', () => isMagicMode = true);
-        mapBtn('fillBtn', () => isFillMode = true);
+        
+        mapBtn('penBtn', () => {}); mapBtn('eraserBtn', () => isEraser = true); mapBtn('rainbowBtn', () => isRainbow = true); mapBtn('stardustBtn', () => isStardust = true); mapBtn('laserBtn', () => isLaserMode = true); mapBtn('highlightBtn', () => isHighlight = true); mapBtn('neonBtn', () => isNeon = true); mapBtn('mirrorBtn', () => isMirrorMode = true); mapBtn('stampBtn', () => isStamping = true); mapBtn('shapeBtn', () => isShapeMode = true); mapBtn('textBtn', () => isTextMode = true); mapBtn('stickyBtn', () => isStickyMode = true); mapBtn('pingBtn', () => isPingMode = true); mapBtn('scratchBtn', () => isScratchMode = true); mapBtn('magicBtn', () => isMagicMode = true); mapBtn('fillBtn', () => isFillMode = true);
 
-        // NEW: Silver Foil Logic
-        function applyFoil(emit) {
-            ctxScratch.fillStyle = "#C0C0C0"; // Silver
-            ctxScratch.fillRect(0, 0, scratchBoard.width, scratchBoard.height);
-            if(emit) socket.emit('foil');
-        }
-        document.getElementById('foilBtn').addEventListener('click', () => applyFoil(true));
-        socket.on('foil', () => applyFoil(false));
-
-        // Scratch Engine
-        function eraseFoil(x, y, size, emit) {
-            ctxScratch.globalCompositeOperation = 'destination-out';
-            ctxScratch.beginPath(); ctxScratch.arc(x, y, size * 2, 0, Math.PI * 2); ctxScratch.fill(); ctxScratch.closePath();
-            ctxScratch.globalCompositeOperation = 'source-over';
-            if(emit) socket.emit('scratch', {x,y,size});
-        }
+        function applyFoil(emit) { ctxScratch.fillStyle = "#C0C0C0"; ctxScratch.fillRect(0, 0, scratchBoard.width, scratchBoard.height); if(emit) socket.emit('foil'); }
+        document.getElementById('foilBtn').addEventListener('click', () => applyFoil(true)); socket.on('foil', () => applyFoil(false));
+        function eraseFoil(x, y, size, emit) { ctxScratch.globalCompositeOperation = 'destination-out'; ctxScratch.beginPath(); ctxScratch.arc(x, y, size * 2, 0, Math.PI * 2); ctxScratch.fill(); ctxScratch.closePath(); ctxScratch.globalCompositeOperation = 'source-over'; if(emit) socket.emit('scratch', {x,y,size}); }
         socket.on('scratch', (d) => eraseFoil(d.x, d.y, d.size, false));
 
         function getTouchPos(e) { const rect = canvas.getBoundingClientRect(); return { x: Math.floor(e.touches[0].clientX - rect.left), y: Math.floor(e.touches[0].clientY - rect.top) }; }
@@ -301,7 +255,7 @@
             
             if (isPingMode) { triggerPing(pos.x, pos.y, true); return; }
             if (isScratchMode) { eraseFoil(pos.x, pos.y, brushSize.value, true); isDrawing = true; return; }
-            if (isFillMode) { return; } // Flood fill removed for space, can re-add if needed
+            if (isFillMode) { return; } 
             
             if (isTextMode || isStamping || isShapeMode) {
                 isDraggingItem = true; dragType = isTextMode ? 'text' : (isShapeMode ? 'shape' : 'stamp'); savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -321,21 +275,13 @@
                 lastX = pos.x; lastY = pos.y; return;
             }
             if (!isDrawing) return;
-
             if (isScratchMode) { eraseFoil(pos.x, pos.y, brushSize.value, true); return; }
 
-            // NEW: Rainbow Color Logic
             let activeColor = document.getElementById('colorPicker').value;
             if (isRainbow) { rainbowHue = (rainbowHue + 3) % 360; activeColor = `hsl(${rainbowHue}, 100%, 50%)`; }
-
-            // NEW: Stardust Logic
             if (isStardust) {
-                const dx = pos.x - currentX; const dy = pos.y - currentY;
-                stardustDistance += Math.sqrt(dx*dx + dy*dy);
-                if (stardustDistance > brushSize.value * 2) {
-                    drawStamp(pos.x, pos.y, '✨', brushSize.value * 2, true);
-                    stardustDistance = 0;
-                }
+                const dx = pos.x - currentX; const dy = pos.y - currentY; stardustDistance += Math.sqrt(dx*dx + dy*dy);
+                if (stardustDistance > brushSize.value * 2) { drawStamp(pos.x, pos.y, '✨', brushSize.value * 2, true); stardustDistance = 0; }
                 currentX = pos.x; currentY = pos.y; return;
             }
 
@@ -366,7 +312,7 @@
         socket.on('stamp', (d) => drawStamp(d.x, d.y, d.emoji, d.size, false));
         function drawText(text, x, y, color, size, emit) { ctx.font = `bold ${size}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color; ctx.fillText(text, x, y); if (emit) socket.emit('text', { text, x, y, color, size }); }
         socket.on('text', (d) => drawText(d.text, d.x, d.y, d.color, d.size, false));
-        socket.on('pointer', (d) => { partnerPointer.style.left = d.x + 'px'; partnerPointer.style.top = d.y + 'px'; partnerPointer.style.opacity = 1; clearTimeout(pointerTimeout); pointerTimeout = setTimeout(() => { partnerPointer.style.opacity = 0; }, 1000); });
+        socket.on('pointer', (d) => { document.getElementById('partnerPointer').style.left = d.x + 'px'; document.getElementById('partnerPointer').style.top = d.y + 'px'; document.getElementById('partnerPointer').style.opacity = 1; clearTimeout(pointerTimeout); pointerTimeout = setTimeout(() => { document.getElementById('partnerPointer').style.opacity = 0; }, 1000); });
         
         document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('settingsMenu').classList.toggle('show'));
         document.getElementById('darkModeBtn').addEventListener('click', () => document.body.classList.toggle('dark-ui'));
