@@ -16,6 +16,7 @@ io.on('connection', (socket) => {
         socket.join(data.roomCode);
         socket.room = data.roomCode; 
         socket.username = data.username || "Artist";
+        console.log(`${socket.username} joined room: ${data.roomCode}`);
     });
 
     const broadcast = (event, data) => {
@@ -38,8 +39,6 @@ io.on('connection', (socket) => {
     socket.on('stickyMove', (data) => broadcast('stickyMove', data));
     socket.on('bgPattern', (pattern) => broadcast('bgPattern', pattern));
     socket.on('loveBomb', () => broadcast('loveBomb'));
-
-    // NEW Update 8.0 Events
     socket.on('pingRadar', (data) => broadcast('pingRadar', data));
     socket.on('foil', () => broadcast('foil'));
     socket.on('scratch', (data) => broadcast('scratch', data));
