@@ -16,7 +16,6 @@ io.on('connection', (socket) => {
         socket.join(data.roomCode);
         socket.room = data.roomCode; 
         socket.username = data.username || "Artist";
-        console.log(`${socket.username} joined room: ${data.roomCode}`);
     });
 
     const broadcast = (event, data) => {
@@ -27,21 +26,22 @@ io.on('connection', (socket) => {
     socket.on('drawing', (data) => broadcast('drawing', data));
     socket.on('fill', (data) => broadcast('fill', data));
     socket.on('stamp', (data) => broadcast('stamp', data));
-    socket.on('text', (data) => broadcast('text', data));
-    socket.on('image', (data) => broadcast('image', data));
     socket.on('clear', () => broadcast('clear'));
     socket.on('bgColor', (color) => broadcast('bgColor', color));
     socket.on('pointer', (data) => broadcast('pointer', data));
     socket.on('undo', () => broadcast('undo'));
     socket.on('shape', (data) => broadcast('shape', data));
     socket.on('template', (data) => broadcast('template', data));
-    socket.on('stickyAdd', (data) => broadcast('stickyAdd', data));
-    socket.on('stickyMove', (data) => broadcast('stickyMove', data));
     socket.on('bgPattern', (pattern) => broadcast('bgPattern', pattern));
     socket.on('loveBomb', () => broadcast('loveBomb'));
     socket.on('pingRadar', (data) => broadcast('pingRadar', data));
     socket.on('foil', () => broadcast('foil'));
     socket.on('scratch', (data) => broadcast('scratch', data));
+
+    // NEW: Object Engine Events!
+    socket.on('addObj', (data) => broadcast('addObj', data));
+    socket.on('moveObj', (data) => broadcast('moveObj', data));
+    socket.on('deleteObj', (id) => broadcast('deleteObj', id));
 
     socket.on('disconnect', () => console.log('An artist disconnected'));
 });
