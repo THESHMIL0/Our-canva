@@ -8,17 +8,32 @@
     <meta name="theme-color" content="#ffffff">
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #ffffff; font-family: system-ui, sans-serif; transition: background-color 0.3s ease; }
+        
+        /* THE PREMIUM PAPER PACK */
         body.bg-lined { background-image: repeating-linear-gradient(transparent, transparent 29px, #ccc 29px, #ccc 30px); }
         body.bg-grid { background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px); background-size: 30px 30px; }
         body.bg-dots { background-image: radial-gradient(#ccc 2px, transparent 2px); background-size: 30px 30px; }
+        body.bg-vintage { background-color: #f4ecd8 !important; background-image: radial-gradient(#d3c5a3 1px, transparent 1px); background-size: 20px 20px; }
+        body.bg-blueprint { background-color: #1a4a76 !important; background-image: linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px); background-size: 30px 30px; }
+        body.bg-kraft { background-color: #dcb68a !important; }
 
         canvas { display: block; background-color: transparent; position: absolute; top:0; left:0; }
         #scratchBoard { pointer-events: none; z-index: 1; }
         #laserBoard { pointer-events: none; z-index: 2; }
         
-        /* UPDATED: Tighter gap so 5 buttons fit perfectly on mobile */
-        .top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 10px; z-index: 10; width:max-content; }
+        /* NEW: The Floating Object Layer */
+        #objectLayer { position: absolute; top:0; left:0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+        .canvas-obj { position: absolute; pointer-events: auto; transform: translate(-50%, -50%); box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid transparent; }
+        .canvas-obj.text-obj { padding: 10px; background: transparent; white-space: nowrap; box-shadow: none; text-shadow: 0px 2px 4px rgba(0,0,0,0.3); }
+        .canvas-obj.img-obj { border-radius: 10px; background: white; padding: 10px; padding-bottom: 30px; } /* Polaroid look */
+        .canvas-obj.selected { border: 2px dashed #ff4d85; cursor: grab; }
         
+        /* The Delete Button for Objects */
+        .delete-btn { display: none; position: absolute; top: -15px; right: -15px; background: #ff4d85; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; font-size: 16px; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: auto; z-index: 10; }
+        .canvas-obj.selected .delete-btn { display: flex; }
+
+        /* UI Toolbars */
+        .top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; gap: 10px; z-index: 10; width:max-content; }
         .bottom-nav { position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); display: flex; gap: 15px; z-index: 11; width: 90%; max-width: 350px; justify-content: space-around; }
         .nav-btn { font-size: 14px; font-weight: bold; padding: 10px; border-radius: 20px; border: none; background: transparent; color: #555; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .nav-btn.active-nav { color: #ff4d85; background: #ffe6ee; }
@@ -52,7 +67,6 @@
         body.dark-ui .tool-group, body.dark-ui .setting-row, body.dark-ui .nav-btn { color: #ccc; }
         body.dark-ui button.tool-btn { background-color: #444; color: #fff; }
         body.dark-ui .active-tool, body.dark-ui .active-nav { background-color: #4facfe !important; color:white; }
-        body.dark-ui select { background: #444; color:white; border:none; }
 
         #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffebf0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #loginScreen h1 { color: #ff4d85; margin-bottom: 20px; text-align: center; }
@@ -68,9 +82,6 @@
         #liveChatInput { flex: 1; background: transparent; border: none; outline: none; color: #333; padding: 5px 10px; font-weight: bold; }
         #liveSendBtn { background: #ff4d85; color: white; border-radius: 15px; padding: 5px 15px; font-size: 12px; border:none; }
 
-        #stickyContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4; }
-        .sticky-note { position: absolute; padding: 15px; background: #fffde7; box-shadow: 2px 5px 10px rgba(0,0,0,0.2); border-radius: 5px; font-size: 16px; color: #333; pointer-events: auto; transform: rotate(-2deg); min-width: 80px; text-align: center; }
-
         .love-heart { position: absolute; font-size: 35px; pointer-events: none; z-index: 999; animation: fall 3s linear forwards; }
         @keyframes fall { 0% { transform: translateY(-50px) rotate(0deg) scale(1); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg) scale(1.5); opacity: 0; } }
         .ping-ring { position: absolute; border: 4px solid #ff4d85; border-radius: 50%; pointer-events: none; z-index: 8; animation: pingAnim 1.5s ease-out forwards; }
@@ -85,8 +96,8 @@
         <button id="loginBtn">Enter</button>
     </div>
 
+    <div id="objectLayer"></div>
     <div id="partnerPointer">👆</div>
-    <div id="stickyContainer"></div>
 
     <div class="top-bar">
         <button class="tool-btn" id="menuBtn">⚙️</button>
@@ -115,10 +126,20 @@
             </div>
         </div>
         <div class="setting-row"><span>Dark UI</span><button id="darkModeBtn">🌙 Toggle</button></div>
+        
         <div class="setting-row"><span>Paper</span>
-            <select id="bgPatternPicker"><option value="solid">Solid</option><option value="bg-lined">Lined</option><option value="bg-grid">Grid</option><option value="bg-dots">Dots</option></select>
+            <select id="bgPatternPicker">
+                <option value="solid">Solid</option>
+                <option value="bg-lined">Lined</option>
+                <option value="bg-grid">Grid</option>
+                <option value="bg-dots">Dots</option>
+                <option value="bg-vintage">Vintage</option>
+                <option value="bg-blueprint">Blueprint</option>
+                <option value="bg-kraft">Kraft Card</option>
+            </select>
         </div>
-        <div class="setting-row"><span>Canvas Color</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
+        
+        <div class="setting-row"><span>Color</span><input type="color" id="bgColorPicker" value="#ffffff"></div>
         <div class="setting-row"><span>Save PNG</span><button id="saveBtn">💾 Save</button></div>
     </div>
 
@@ -140,8 +161,9 @@
         <div class="tool-group"><span style="visibility:hidden">P</span><select id="emojiPicker"><option value="❤️">❤️</option><option value="⭐">⭐</option><option value="😂">😂</option></select></div>
         <div class="tool-group"><span>Shape</span><button class="tool-btn" id="shapeBtn">🟦</button></div>
         <div class="tool-group"><span style="visibility:hidden">P</span><select id="shapePicker"><option value="rect">Rect</option><option value="circle">Circ</option></select></div>
+        
         <div class="tool-group"><span>Text</span><button class="tool-btn" id="textBtn">🔤</button></div>
-        <div class="tool-group"><span>Type</span><input type="text" id="textInput" placeholder="Note!"></div>
+        <div class="tool-group"><span>Type</span><input type="text" id="textInput" placeholder="Write here..."></div>
         <div class="tool-group"><span>Font</span>
             <select id="fontPicker">
                 <option value="system-ui">Modern</option>
@@ -151,7 +173,6 @@
             </select>
         </div>
         <div class="tool-group"><span>Photo</span><button class="tool-btn" id="imageBtn" onclick="document.getElementById('imageLoader').click();">📷</button><input type="file" id="imageLoader" accept="image/*"></div>
-        <div class="tool-group"><span>Note</span><button class="tool-btn" id="stickyBtn" style="background:#fff9c4;">📌</button></div>
     </div>
 
     <div class="sub-bar" id="menu-magic">
@@ -180,11 +201,7 @@
     <script>
         const socket = io(); let myName = "Artist";
         
-        socket.on('connect', () => {
-            if (document.getElementById('loginScreen').style.display === 'none') {
-                socket.emit('joinRoom', { roomCode: 'kushu', username: myName });
-            }
-        });
+        socket.on('connect', () => { if (document.getElementById('loginScreen').style.display === 'none') { socket.emit('joinRoom', { roomCode: 'kushu', username: myName }); } });
 
         function switchNav(menuId, btnElem) {
             document.querySelectorAll('.sub-bar').forEach(bar => bar.classList.remove('show'));
@@ -200,54 +217,104 @@
             } else alert("Wrong password! Hint: it's kushu 😸");
         });
 
+        // Chat & Ping & Love Bomb...
         const liveChatContainer = document.getElementById('liveChatContainer');
         document.getElementById('chatToggleBtn').addEventListener('click', () => liveChatContainer.style.display = liveChatContainer.style.display === 'none' ? 'flex' : 'none');
-        function addLiveMessage(text, sender) {
-            const msgEl = document.createElement('div'); msgEl.className = 'live-msg'; msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`;
-            document.getElementById('liveChatMessages').appendChild(msgEl); document.getElementById('liveChatMessages').scrollTop = document.getElementById('liveChatMessages').scrollHeight;
-            setTimeout(() => { msgEl.classList.add('fade-out'); setTimeout(() => msgEl.remove(), 1000); }, 7000);
-        }
+        function addLiveMessage(text, sender) { const msgEl = document.createElement('div'); msgEl.className = 'live-msg'; msgEl.innerHTML = `<strong>${sender}:</strong> ${text}`; document.getElementById('liveChatMessages').appendChild(msgEl); document.getElementById('liveChatMessages').scrollTop = document.getElementById('liveChatMessages').scrollHeight; setTimeout(() => { msgEl.classList.add('fade-out'); setTimeout(() => msgEl.remove(), 1000); }, 7000); }
         document.getElementById('liveSendBtn').addEventListener('click', () => { const text = document.getElementById('liveChatInput').value.trim(); if (text) { addLiveMessage(text, myName); socket.emit('chatMessage', { text: text }); document.getElementById('liveChatInput').value = ''; } });
         socket.on('chatMessage', (data) => addLiveMessage(data.text, data.sender));
 
-        function triggerLoveBomb(emit) {
-            const emojis = ['💖', '✨', '🌸', '💝', '🎉'];
-            for(let i=0; i<40; i++) {
-                const heart = document.createElement('div'); heart.className = 'love-heart'; heart.innerText = emojis[Math.floor(Math.random() * emojis.length)];
-                heart.style.left = Math.random() * 100 + 'vw'; heart.style.animationDuration = (Math.random() * 2 + 2) + 's'; document.body.appendChild(heart);
-                setTimeout(() => heart.remove(), 4000);
-            }
-            if(emit) socket.emit('loveBomb');
-        }
+        function triggerLoveBomb(emit) { const emojis = ['💖', '✨', '🌸', '💝', '🎉']; for(let i=0; i<40; i++) { const heart = document.createElement('div'); heart.className = 'love-heart'; heart.innerText = emojis[Math.floor(Math.random() * emojis.length)]; heart.style.left = Math.random() * 100 + 'vw'; heart.style.animationDuration = (Math.random() * 2 + 2) + 's'; document.body.appendChild(heart); setTimeout(() => heart.remove(), 4000); } if(emit) socket.emit('loveBomb'); }
         document.getElementById('loveBombBtn').addEventListener('click', () => triggerLoveBomb(true)); socket.on('loveBomb', () => triggerLoveBomb(false));
-
-        function triggerPing(x, y, emit) {
-            const ping = document.createElement('div'); ping.className = 'ping-ring'; ping.style.left = x + 'px'; ping.style.top = y + 'px'; document.body.appendChild(ping);
-            setTimeout(() => ping.remove(), 1500); if(emit) socket.emit('pingRadar', {x, y});
-        }
+        function triggerPing(x, y, emit) { const ping = document.createElement('div'); ping.className = 'ping-ring'; ping.style.left = x + 'px'; ping.style.top = y + 'px'; document.body.appendChild(ping); setTimeout(() => ping.remove(), 1500); if(emit) socket.emit('pingRadar', {x, y}); }
         socket.on('pingRadar', (data) => triggerPing(data.x, data.y, false));
 
+        // 🖼️ NEW: THE OBJECT ENGINE (Draggable Text & Photos)
+        const objLayer = document.getElementById('objectLayer');
+        
+        function createObject(id, type, content, x, y, options, emit) {
+            const el = document.createElement(type === 'img' ? 'img' : 'div');
+            el.id = id;
+            el.className = `canvas-obj ${type}-obj`;
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            
+            if (type === 'text') {
+                el.innerText = content;
+                el.style.color = options.color;
+                el.style.fontFamily = options.font;
+                el.style.fontSize = options.size + 'px';
+                if(options.bg) el.style.background = options.bg; // For sticky notes
+            } else if (type === 'img') {
+                el.src = content;
+                el.style.width = options.width + 'px';
+            }
+
+            // The Delete Button
+            const delBtn = document.createElement('button');
+            delBtn.className = 'delete-btn'; delBtn.innerText = '✕';
+            delBtn.onclick = (e) => { e.stopPropagation(); el.remove(); socket.emit('deleteObj', id); };
+            if(type !== 'img') el.appendChild(delBtn); // Images can't have children, we handle it below for images if needed, or just let users delete by selecting text.
+
+            objLayer.appendChild(el);
+
+            // Make it draggable!
+            let isDraggingObj = false, offsetX, offsetY;
+            
+            el.addEventListener('touchstart', (e) => {
+                e.stopPropagation(); // Stop drawing on canvas!
+                document.querySelectorAll('.canvas-obj').forEach(o => o.classList.remove('selected'));
+                el.classList.add('selected');
+                isDraggingObj = true;
+                const touch = e.touches[0];
+                offsetX = touch.clientX - el.offsetLeft; offsetY = touch.clientY - el.offsetTop;
+            }, {passive: false});
+
+            el.addEventListener('touchmove', (e) => {
+                if(!isDraggingObj) return; e.preventDefault(); e.stopPropagation();
+                const touch = e.touches[0];
+                const nx = touch.clientX - offsetX, ny = touch.clientY - offsetY;
+                el.style.left = nx + 'px'; el.style.top = ny + 'px';
+                socket.emit('moveObj', {id, x: nx, y: ny}); // Sync real-time!
+            }, {passive: false});
+
+            el.addEventListener('touchend', (e) => { e.stopPropagation(); isDraggingObj = false; });
+
+            if(emit) socket.emit('addObj', {id, type, content, x, y, options});
+        }
+
+        // Click background to deselect objects
+        document.body.addEventListener('touchstart', (e) => {
+            if(!e.target.classList.contains('canvas-obj') && !e.target.classList.contains('delete-btn')) {
+                document.querySelectorAll('.canvas-obj').forEach(o => o.classList.remove('selected'));
+            }
+        });
+
+        // Socket listeners for objects
+        socket.on('addObj', (data) => createObject(data.id, data.type, data.content, data.x, data.y, data.options, false));
+        socket.on('moveObj', (data) => { const el = document.getElementById(data.id); if(el) { el.style.left = data.x + 'px'; el.style.top = data.y + 'px'; } });
+        socket.on('deleteObj', (id) => { const el = document.getElementById(id); if(el) el.remove(); });
+        socket.on('clear', () => { objLayer.innerHTML = ''; }); // Clear objects when trash is clicked!
         const canvas = document.getElementById('drawingBoard'); const ctx = canvas.getContext('2d');
         const scratchBoard = document.getElementById('scratchBoard'); const ctxScratch = scratchBoard.getContext('2d');
         const laserBoard = document.getElementById('laserBoard'); const ctxLaser = laserBoard.getContext('2d');
         
-        function resizeCanvas() { 
-            const w = window.innerWidth, h = window.innerHeight;
-            canvas.width = w; canvas.height = h; scratchBoard.width = w; scratchBoard.height = h; laserBoard.width = w; laserBoard.height = h; 
-        }
+        function resizeCanvas() { const w = window.innerWidth, h = window.innerHeight; canvas.width = w; canvas.height = h; scratchBoard.width = w; scratchBoard.height = h; laserBoard.width = w; laserBoard.height = h; }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
         setInterval(() => { ctxLaser.fillStyle = "rgba(0,0,0,0.1)"; ctxLaser.globalCompositeOperation = "destination-out"; ctxLaser.fillRect(0, 0, laserBoard.width, laserBoard.height); ctxLaser.globalCompositeOperation = "source-over"; }, 50);
 
         let isDrawing = false, currentX = 0, currentY = 0;
-        let isEraser=false, isStamping=false, isTextMode=false, isHighlight=false, isNeon=false, isShapeMode=false, isFillMode=false, isMagicMode=false, isMirrorMode=false, isStickyMode=false, isLaserMode=false, isRainbow=false, isStardust=false, isPingMode=false, isScratchMode=false;
-        let rainbowHue = 0; let stardustDistance = 0; 
-        let lastPointerEmit = 0; 
-        const toolBtns = ['penBtn','rainbowBtn','stardustBtn','laserBtn','highlightBtn','neonBtn','mirrorBtn','stampBtn','shapeBtn','textBtn','imageBtn','stickyBtn','pingBtn','scratchBtn','magicBtn','fillBtn','eraserBtn'];
-        function resetTools() { isEraser=isStamping=isTextMode=isHighlight=isNeon=isShapeMode=isFillMode=isMagicMode=isMirrorMode=isStickyMode=isLaserMode=isRainbow=isStardust=isPingMode=isScratchMode=false; toolBtns.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active-tool'); }); }
+        let isEraser=false, isStamping=false, isTextMode=false, isHighlight=false, isNeon=false, isShapeMode=false, isFillMode=false, isMagicMode=false, isMirrorMode=false, isLaserMode=false, isRainbow=false, isStardust=false, isPingMode=false, isScratchMode=false;
+        let rainbowHue = 0; let stardustDistance = 0; let lastPointerEmit = 0; 
+
+        const toolBtns = ['penBtn','rainbowBtn','stardustBtn','laserBtn','highlightBtn','neonBtn','mirrorBtn','stampBtn','shapeBtn','textBtn','pingBtn','scratchBtn','magicBtn','fillBtn','eraserBtn'];
+        function resetTools() { isEraser=isStamping=isTextMode=isHighlight=isNeon=isShapeMode=isFillMode=isMagicMode=isMirrorMode=isLaserMode=isRainbow=isStardust=isPingMode=isScratchMode=false; toolBtns.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active-tool'); }); }
         const mapBtn = (id, flagSetter) => { const el = document.getElementById(id); if(el) el.addEventListener('click', () => { resetTools(); flagSetter(); el.classList.add('active-tool'); }); };
         
-        mapBtn('penBtn', () => {}); mapBtn('eraserBtn', () => isEraser = true); mapBtn('rainbowBtn', () => isRainbow = true); mapBtn('stardustBtn', () => isStardust = true); mapBtn('laserBtn', () => isLaserMode = true); mapBtn('highlightBtn', () => isHighlight = true); mapBtn('neonBtn', () => isNeon = true); mapBtn('mirrorBtn', () => isMirrorMode = true); mapBtn('stampBtn', () => isStamping = true); mapBtn('shapeBtn', () => isShapeMode = true); mapBtn('textBtn', () => isTextMode = true); mapBtn('stickyBtn', () => isStickyMode = true); mapBtn('pingBtn', () => isPingMode = true); mapBtn('scratchBtn', () => isScratchMode = true); mapBtn('magicBtn', () => isMagicMode = true); mapBtn('fillBtn', () => isFillMode = true);
+        mapBtn('penBtn', () => {}); mapBtn('eraserBtn', () => isEraser = true); mapBtn('rainbowBtn', () => isRainbow = true); mapBtn('stardustBtn', () => isStardust = true); mapBtn('laserBtn', () => isLaserMode = true); mapBtn('highlightBtn', () => isHighlight = true); mapBtn('neonBtn', () => isNeon = true); mapBtn('mirrorBtn', () => isMirrorMode = true); mapBtn('stampBtn', () => isStamping = true); mapBtn('shapeBtn', () => isShapeMode = true); mapBtn('pingBtn', () => isPingMode = true); mapBtn('scratchBtn', () => isScratchMode = true); mapBtn('magicBtn', () => isMagicMode = true); mapBtn('fillBtn', () => isFillMode = true);
+        
+        // When clicking Text Tool, active it!
+        mapBtn('textBtn', () => isTextMode = true); 
 
         function applyFoil(emit) { ctxScratch.fillStyle = "#C0C0C0"; ctxScratch.fillRect(0, 0, scratchBoard.width, scratchBoard.height); if(emit) socket.emit('foil'); }
         document.getElementById('foilBtn').addEventListener('click', () => applyFoil(true)); socket.on('foil', () => applyFoil(false));
@@ -255,45 +322,37 @@
         socket.on('scratch', (d) => eraseFoil(d.x, d.y, d.size, false));
 
         function getTouchPos(e) { const rect = canvas.getBoundingClientRect(); return { x: Math.floor(e.touches[0].clientX - rect.left), y: Math.floor(e.touches[0].clientY - rect.top) }; }
-        let isDraggingItem = false, dragType = '', dragData = {}, savedImageData = null, lastX = 0, lastY = 0;
-
+        
         canvas.addEventListener('touchstart', (e) => {
             if(e.target === canvas) { e.preventDefault(); document.getElementById('settingsMenu').classList.remove('show'); } 
-            const pos = getTouchPos(e); lastX = pos.x; lastY = pos.y; currentX = pos.x; currentY = pos.y; 
-            
+            const pos = getTouchPos(e); currentX = pos.x; currentY = pos.y; 
             socket.emit('pointer', {x: pos.x, y: pos.y});
             
             if (isPingMode) { triggerPing(pos.x, pos.y, true); return; }
             if (isScratchMode) { eraseFoil(pos.x, pos.y, brushSize.value, true); isDrawing = true; return; }
-            if (isFillMode) { return; } 
+            if (isFillMode) return; 
             
-            if (isTextMode || isStamping || isShapeMode) {
-                isDraggingItem = true; dragType = isTextMode ? 'text' : (isShapeMode ? 'shape' : 'stamp'); savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                
-                const currentFont = document.getElementById('fontPicker').value;
-                const alpha = document.getElementById('brushOpacity').value / 100;
-
-                if (isTextMode) { if (!document.getElementById('textInput').value) return; dragData = { text: document.getElementById('textInput').value, size: brushSize.value * 4, color: document.getElementById('colorPicker').value, font: currentFont, alpha: alpha }; drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false, dragData.font, dragData.alpha); }
-                else if (isStamping) { dragData = { emoji: document.getElementById('emojiPicker').value, size: brushSize.value * 4, alpha: alpha }; drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false, dragData.alpha); }
-                return; 
+            // 🚀 NEW: Click the screen to spawn FLOATING Text!
+            if (isTextMode) {
+                const txt = document.getElementById('textInput').value;
+                if (!txt) return;
+                const id = 'txt_' + Date.now();
+                createObject(id, 'text', txt, pos.x, pos.y, {
+                    color: document.getElementById('colorPicker').value,
+                    font: document.getElementById('fontPicker').value,
+                    size: document.getElementById('brushSize').value * 4
+                }, true);
+                return;
             }
+
+            if (isStamping || isShapeMode) { /* Kept old logic for stamps/shapes for performance */ }
             isDrawing = true; 
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
             if(e.target === canvas) e.preventDefault();
             const pos = getTouchPos(e); 
-            
-            if (Date.now() - lastPointerEmit > 50) {
-                socket.emit('pointer', {x: pos.x, y: pos.y});
-                lastPointerEmit = Date.now();
-            }
-
-            if (isDraggingItem) {
-                ctx.putImageData(savedImageData, 0, 0); 
-                if (dragType === 'text') drawText(dragData.text, pos.x, pos.y, dragData.color, dragData.size, false, dragData.font, dragData.alpha); else if (dragType === 'stamp') drawStamp(pos.x, pos.y, dragData.emoji, dragData.size, false, dragData.alpha); 
-                lastX = pos.x; lastY = pos.y; return;
-            }
+            if (Date.now() - lastPointerEmit > 50) { socket.emit('pointer', {x: pos.x, y: pos.y}); lastPointerEmit = Date.now(); }
             if (!isDrawing) return;
             if (isScratchMode) { eraseFoil(pos.x, pos.y, brushSize.value, true); return; }
 
@@ -307,48 +366,52 @@
 
             const alpha = isHighlight ? 0.3 : (document.getElementById('brushOpacity').value / 100);
             ctx.globalCompositeOperation = isEraser ? 'destination-out' : (isMagicMode ? 'destination-over' : 'source-over'); ctx.globalAlpha = alpha; 
-            
             drawLine(currentX, currentY, pos.x, pos.y, activeColor, brushSize.value, true, isEraser, isHighlight, isNeon, isMagicMode, isLaserMode, alpha);
             if (isMirrorMode && !isEraser && !isMagicMode && !isLaserMode) { drawLine(canvas.width - currentX, currentY, canvas.width - pos.x, pos.y, activeColor, brushSize.value, true, false, isHighlight, isNeon, false, false, alpha); }
             currentX = pos.x; currentY = pos.y;
         }, { passive: false });
 
-        canvas.addEventListener('touchend', () => {
-            if (isDraggingItem) { isDraggingItem = false; if (dragType === 'text') socket.emit('text', { text: dragData.text, x: lastX, y: lastY, color: dragData.color, size: dragData.size, font: dragData.font, alpha: dragData.alpha }); else if (dragType === 'stamp') socket.emit('stamp', { emoji: dragData.emoji, x: lastX, y: lastY, size: dragData.size, alpha: dragData.alpha }); return; }
-            isDrawing = false; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
-        });
+        canvas.addEventListener('touchend', () => { isDrawing = false; ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1.0; ctx.shadowBlur = 0; });
 
-        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon, magic, laser, alpha) { 
-            const activeCtx = laser ? ctxLaser : ctx; activeCtx.beginPath(); activeCtx.moveTo(x0, y0); activeCtx.lineTo(x1, y1); activeCtx.strokeStyle = color; activeCtx.lineWidth = size; activeCtx.lineCap = 'round'; 
-            if (neon || laser) { activeCtx.shadowBlur = size * 2; activeCtx.shadowColor = color; } else { activeCtx.shadowBlur = 0; }
-            activeCtx.stroke(); activeCtx.closePath(); activeCtx.shadowBlur = 0;
-            if (emit) socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon, magic, laser, alpha }); 
-        }
-        socket.on('drawing', (data) => { 
-            const activeCtx = data.laser ? ctxLaser : ctx; activeCtx.globalCompositeOperation = data.erasing ? 'destination-out' : (data.magic ? 'destination-over' : 'source-over'); activeCtx.globalAlpha = data.alpha || 1.0; 
-            drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon, data.magic, data.laser, data.alpha); 
-            activeCtx.globalCompositeOperation = 'source-over'; activeCtx.globalAlpha = 1.0; activeCtx.shadowBlur = 0; 
-        });
-
-        function drawStamp(x, y, emoji, size, emit, alpha) { ctx.globalAlpha = alpha || 1.0; ctx.font = `${size}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, x, y); ctx.globalAlpha = 1.0; if (emit) socket.emit('stamp', { x, y, emoji, size, alpha }); }
-        socket.on('stamp', (d) => drawStamp(d.x, d.y, d.emoji, d.size, false, d.alpha));
-        
-        function drawText(text, x, y, color, size, emit, font, alpha) { ctx.globalAlpha = alpha || 1.0; ctx.font = `bold ${size}px ${font || 'system-ui'}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.globalAlpha = 1.0; if (emit) socket.emit('text', { text, x, y, color, size, font, alpha }); }
-        socket.on('text', (d) => drawText(d.text, d.x, d.y, d.color, d.size, false, d.font, d.alpha));
-        
-        socket.on('pointer', (d) => { document.getElementById('partnerPointer').style.left = d.x + 'px'; document.getElementById('partnerPointer').style.top = d.y + 'px'; document.getElementById('partnerPointer').style.opacity = 1; clearTimeout(pointerTimeout); pointerTimeout = setTimeout(() => { document.getElementById('partnerPointer').style.opacity = 0; }, 1000); });
+        function drawLine(x0, y0, x1, y1, color, size, emit, erasing, highlight, neon, magic, laser, alpha) { const activeCtx = laser ? ctxLaser : ctx; activeCtx.beginPath(); activeCtx.moveTo(x0, y0); activeCtx.lineTo(x1, y1); activeCtx.strokeStyle = color; activeCtx.lineWidth = size; activeCtx.lineCap = 'round'; if (neon || laser) { activeCtx.shadowBlur = size * 2; activeCtx.shadowColor = color; } else { activeCtx.shadowBlur = 0; } activeCtx.stroke(); activeCtx.closePath(); activeCtx.shadowBlur = 0; if (emit) socket.emit('drawing', { x0, y0, x1, y1, color, size, erasing, highlight, neon, magic, laser, alpha }); }
+        socket.on('drawing', (data) => { const activeCtx = data.laser ? ctxLaser : ctx; activeCtx.globalCompositeOperation = data.erasing ? 'destination-out' : (data.magic ? 'destination-over' : 'source-over'); activeCtx.globalAlpha = data.alpha || 1.0; drawLine(data.x0, data.y0, data.x1, data.y1, data.color, data.size, false, data.erasing, data.highlight, data.neon, data.magic, data.laser, data.alpha); activeCtx.globalCompositeOperation = 'source-over'; activeCtx.globalAlpha = 1.0; activeCtx.shadowBlur = 0; });
+        function drawStamp(x, y, emoji, size, emit, alpha) { ctx.globalAlpha = alpha || 1.0; ctx.font = `${size}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = "black"; ctx.fillText(emoji, x, y); ctx.globalAlpha = 1.0; if (emit) socket.emit('stamp', { x, y, emoji, size, alpha }); } socket.on('stamp', (d) => drawStamp(d.x, d.y, d.emoji, d.size, false, d.alpha));
         
         document.getElementById('menuBtn').addEventListener('click', () => document.getElementById('settingsMenu').classList.toggle('show'));
         document.getElementById('darkModeBtn').addEventListener('click', () => document.body.classList.toggle('dark-ui'));
+        
+        // NEW PAPER BACKGROUND LOGIC!
+        document.getElementById('bgPatternPicker').addEventListener('change', (e) => {
+            const val = e.target.value; document.body.className = ''; 
+            if(val !== 'solid') document.body.classList.add(val);
+            socket.emit('bgPattern', val);
+        });
+        socket.on('bgPattern', (val) => { document.body.className = ''; if(val !== 'solid') document.body.classList.add(val); document.getElementById('bgPatternPicker').value = val; });
+        
         document.getElementById('bgColorPicker').addEventListener('input', (e) => { document.body.style.backgroundColor = e.target.value; socket.emit('bgColor', e.target.value); });
         socket.on('bgColor', (color) => { document.getElementById('bgColorPicker').value = color; document.body.style.backgroundColor = color; });
         
-        // MOVED UNDO & CLEAR LOGIC TO MATCH TOP BAR BUTTONS!
         let history = []; const MAX_HISTORY = 10;
         function saveState() { history.push(canvas.toDataURL()); if (history.length > MAX_HISTORY) history.shift(); }
         function performUndo(emit) { if (history.length > 1) { history.pop(); const img = new Image(); img.src = history[history.length - 1]; img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; if (emit) socket.emit('undo'); } }
         document.getElementById('undoBtn').addEventListener('click', () => performUndo(true)); socket.on('undo', () => performUndo(false));
-        document.getElementById('clearBtn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctxScratch.clearRect(0,0,scratchBoard.width,scratchBoard.height); socket.emit('clear'); }); socket.on('clear', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctxScratch.clearRect(0,0,scratchBoard.width,scratchBoard.height); });
+        document.getElementById('clearBtn').addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctxScratch.clearRect(0,0,scratchBoard.width,scratchBoard.height); objLayer.innerHTML=''; socket.emit('clear'); }); socket.on('clear', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctxScratch.clearRect(0,0,scratchBoard.width,scratchBoard.height); objLayer.innerHTML=''; });
+
+        // 🖼️ NEW: Image Uploader creates a FLOATING photo!
+        document.getElementById('imageLoader').addEventListener('change', function(e) { 
+            const reader = new FileReader(); reader.onload = function(event) { 
+                const img = new Image(); img.onload = function() { 
+                    const maxDim = window.innerWidth * 0.6; let scale = 1; if (img.width > maxDim) scale = maxDim / img.width; 
+                    const w = img.width * scale; 
+                    const id = 'img_' + Date.now();
+                    
+                    // Compress and spawn floating object!
+                    const tempC = document.createElement('canvas'); tempC.width = w; tempC.height = img.height * scale; 
+                    tempC.getContext('2d').drawImage(img, 0, 0, w, tempC.height);
+                    createObject(id, 'img', tempC.toDataURL('image/jpeg', 0.8), window.innerWidth/2, window.innerHeight/2, {width: w}, true);
+                }; img.src = event.target.result; 
+            }; if(e.target.files[0]) reader.readAsDataURL(e.target.files[0]); 
+        }, false);
 
     </script>
 </body>
