@@ -18,9 +18,7 @@ io.on('connection', (socket) => {
         socket.username = data.username || "Artist";
     });
 
-    const broadcast = (event, data) => {
-        if (socket.room) socket.to(socket.room).emit(event, data);
-    };
+    const broadcast = (event, data) => { if (socket.room) socket.to(socket.room).emit(event, data); };
 
     socket.on('chatMessage', (data) => broadcast('chatMessage', { text: data.text, sender: socket.username }));
     socket.on('drawing', (data) => broadcast('drawing', data));
@@ -34,10 +32,12 @@ io.on('connection', (socket) => {
     socket.on('undo', () => broadcast('undo'));
     socket.on('shape', (data) => broadcast('shape', data));
     socket.on('template', (data) => broadcast('template', data));
+    
+    // Sticky Notes Updates
     socket.on('stickyAdd', (data) => broadcast('stickyAdd', data));
     socket.on('stickyMove', (data) => broadcast('stickyMove', data));
+    socket.on('stickyDelete', (id) => broadcast('stickyDelete', id)); // NEW
 
-    // NEW: Update 7.0 Events
     socket.on('bgPattern', (pattern) => broadcast('bgPattern', pattern));
     socket.on('loveBomb', () => broadcast('loveBomb'));
 
