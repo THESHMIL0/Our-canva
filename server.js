@@ -12,26 +12,17 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('A new artist connected:', socket.id);
 
-    // NEW: Join private room with a Username
     socket.on('joinRoom', (data) => {
         socket.join(data.roomCode);
         socket.room = data.roomCode; 
         socket.username = data.username || "Artist";
-        console.log(`${socket.username} joined room: ${data.roomCode}`);
     });
 
     const broadcast = (event, data) => {
-        if (socket.room) {
-            socket.to(socket.room).emit(event, data);
-        }
+        if (socket.room) socket.to(socket.room).emit(event, data);
     };
 
-    // Chat Event (Now includes the sender's name)
-    socket.on('chatMessage', (data) => {
-        broadcast('chatMessage', { text: data.text, sender: socket.username });
-    });
-
-    // All other Canvas Tools
+    socket.on('chatMessage', (data) => broadcast('chatMessage', { text: data.text, sender: socket.username }));
     socket.on('drawing', (data) => broadcast('drawing', data));
     socket.on('fill', (data) => broadcast('fill', data));
     socket.on('stamp', (data) => broadcast('stamp', data));
@@ -45,6 +36,10 @@ io.on('connection', (socket) => {
     socket.on('template', (data) => broadcast('template', data));
     socket.on('stickyAdd', (data) => broadcast('stickyAdd', data));
     socket.on('stickyMove', (data) => broadcast('stickyMove', data));
+
+    // NEW: Update 7.0 Events
+    socket.on('bgPattern', (pattern) => broadcast('bgPattern', pattern));
+    socket.on('loveBomb', () => broadcast('loveBomb'));
 
     socket.on('disconnect', () => console.log('An artist disconnected'));
 });
